@@ -20,7 +20,7 @@
     </div>
 
     <div class="company">
-        <h4>Công ty: <?php echo e($company['name']); ?></h4>
+        <h4>Cửa hàng: <?php echo e($company['name']); ?></h4>
         <p>Địa chỉ: <?php echo e($company['address']); ?></p>
         <p>Điện thoại: <?php echo e($company['phone']); ?></p>
         <p>Email: <?php echo e($company['email']); ?></p>
