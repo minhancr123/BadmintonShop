@@ -77,8 +77,8 @@
                                 <div class="col-6">
                                     <div class="stat-card p-3 bg-light rounded">
                                         <div class="stat-number text-success fw-bold fs-4">
-                                            @if($category->products && $category->products->where('is_active', true)->where('quantity', '>', 0)->count() > 0)
-                                                {{ $category->products->where('is_active', true)->where('quantity', '>', 0)->count() }}
+                                            @if ($category->products && $category->products->where('is_active', true)->where('quantity', '>', 0)->count() > 0)
+                                                {{ $category->products->where('is_active', true)->where('quantity', '>', 0)->sum('quantity') }}
                                             @else
                                                 0
                                             @endif

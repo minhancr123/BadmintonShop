@@ -7,6 +7,8 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use PhpParser\Node\Stmt\TryCatch;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class OrderController extends Controller
 {
@@ -269,8 +271,48 @@ class OrderController extends Controller
             abort(403, 'Unauthorized access to this order.');
         }
 
-        // TODO: Implement PDF invoice generation
-        return redirect()->back()
-                        ->with('info', 'Invoice download feature will be available soon.');
+        //Allow download only for delivered orders
+        if($order->status !== "delivered") {
+            return response()->json([
+                'success' => false,
+                'error' => 'Invoice can only be downloaded for delivered orders.'
+            ], 403);
+        }
+
+        //Load relationship data
+        $order->load(([
+            'orderItems.product',
+            'user'
+        ]));
+
+        $invoiceData = [
+            'order' => $order,
+            'orderItems' => $order->orderItems,
+            'user' => $order->user,
+            'company' => [
+                'name' => 'Badminton Shop',
+                'address' => '123 Đường ABC, Quận 1, TP.HCM',
+                'phone' => '0123 456 789',
+                'email' => 'info@badmintonshop.com',
+                'tax_code' => '0123456789'
+            ],
+            'invoice_number' => 'HĐ-' . str_pad($order->id, 6, '0', STR_PAD_LEFT),
+             'invoice_date' => now()->format('d/m/Y'),
+            'due_date' => now()->addDays(30)->format('d/m/Y')
+        ];
+        
+        try{
+            $pdf = PDF::loadView("orders.invoice", $invoiceData);
+            $pdf->setPaper('A4', 'portrait');
+            $filename = $invoiceData['invoice_number'] . '.pdf';
+
+            
+            return $pdf->download($filename);
+        } catch (\Exception $e) {
+            return redirect()->back()
+                            ->with('error', 'Failed to generate invoice: ' . $e->getMessage());
+        }
+
+       
     }
 }

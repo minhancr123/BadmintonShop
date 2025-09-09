@@ -214,8 +214,13 @@ class AdminController extends Controller
             $order->update(['status' => $newStatus]);
         }
 
-        return redirect()->back()
-                        ->with('success', "Order status updated to {$newStatus}.");
+        $order->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật trạng thái đơn hàng thành công!',
+            'status' => $order->status
+        ]);
     }
 
     /**
