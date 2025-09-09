@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'laravel/badminton-shop',
-        'pretty_version' => '1.0.0+no-version-set',
-        'version' => '1.0.0.0',
-        'reference' => null,
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
+        'reference' => '745a403706e73acab14c1ba10f03e60cf76fdd42',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -389,9 +389,9 @@
             ),
         ),
         'laravel/badminton-shop' => array(
-            'pretty_version' => '1.0.0+no-version-set',
-            'version' => '1.0.0.0',
-            'reference' => null,
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => '745a403706e73acab14c1ba10f03e60cf76fdd42',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

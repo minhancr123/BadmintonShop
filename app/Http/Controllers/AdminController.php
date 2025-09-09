@@ -192,30 +192,42 @@ class AdminController extends Controller
      */
     public function updateOrderStatus(Request $request, Order $order)
     {
-        $request->validate([
-            'status' => 'required|in:pending,processing,shipped,delivered,cancelled',
-        ]);
+        try {
+            $request->validate([
+                'status' => 'required|in:pending,processing,shipped,delivered,cancelled',
+            ]);
 
-        $oldStatus = $order->status;
-        $newStatus = $request->status;
+            $oldStatus = $order->status;
+            $newStatus = $request->status;
 
-        // Handle specific status changes
-        if ($newStatus === 'shipped' && $oldStatus !== 'shipped') {
-            $order->markAsShipped();
-        } elseif ($newStatus === 'delivered' && $oldStatus !== 'delivered') {
-            $order->markAsDelivered();
-        } elseif ($newStatus === 'cancelled' && $oldStatus !== 'cancelled') {
-            if (!$order->canBeCancelled()) {
-                return redirect()->back()
-                                ->with('error', 'This order cannot be cancelled.');
+            // Handle specific status changes
+            if ($newStatus === 'shipped' && $oldStatus !== 'shipped') {
+                $order->markAsShipped();
+            } elseif ($newStatus === 'delivered' && $oldStatus !== 'delivered') {
+                $order->markAsDelivered();
+            } elseif ($newStatus === 'cancelled' && $oldStatus !== 'cancelled') {
+                if (!$order->canBeCancelled()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'This order cannot be cancelled.'
+                    ]);
+                }
+                $order->cancel();
+            } else {
+                $order->update(['status' => $newStatus]);
             }
-            $order->cancel();
-        } else {
-            $order->update(['status' => $newStatus]);
-        }
 
-        return redirect()->back()
-                        ->with('success', "Order status updated to {$newStatus}.");
+            return response()->json([
+                'success' => true,
+                'message' => "Order status updated to {$newStatus}."
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
     }
 
     /**

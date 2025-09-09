@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit3e933f4e23998ac352f934c64a64b238
+class ComposerStaticInitabc05a9fc76fbb451eaabe20f423bedf
 {
     public static $files = array (
         '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
@@ -580,6 +580,7 @@ class ComposerStaticInit3e933f4e23998ac352f934c64a64b238
         'App\\Http\\Controllers\\OrderController' => __DIR__ . '/../..' . '/app/Http/Controllers/OrderController.php',
         'App\\Http\\Controllers\\PaymentController' => __DIR__ . '/../..' . '/app/Http/Controllers/PaymentController.php',
         'App\\Http\\Controllers\\ProductController' => __DIR__ . '/../..' . '/app/Http/Controllers/ProductController.php',
+        'App\\Http\\Controllers\\ReviewController' => __DIR__ . '/../..' . '/app/Http/Controllers/ReviewController.php',
         'App\\Http\\Kernel' => __DIR__ . '/../..' . '/app/Http/Kernel.php',
         'App\\Http\\Middleware\\AdminMiddleware' => __DIR__ . '/../..' . '/app/Http/Middleware/AdminMiddleware.php',
         'App\\Http\\Middleware\\Authenticate' => __DIR__ . '/../..' . '/app/Http/Middleware/Authenticate.php',
@@ -590,6 +591,7 @@ class ComposerStaticInit3e933f4e23998ac352f934c64a64b238
         'App\\Models\\Order' => __DIR__ . '/../..' . '/app/Models/Order.php',
         'App\\Models\\OrderItem' => __DIR__ . '/../..' . '/app/Models/OrderItem.php',
         'App\\Models\\Product' => __DIR__ . '/../..' . '/app/Models/Product.php',
+        'App\\Models\\Review' => __DIR__ . '/../..' . '/app/Models/Review.php',
         'App\\Models\\User' => __DIR__ . '/../..' . '/app/Models/User.php',
         'App\\Output\\Concerns\\InteractsWithSymbols' => __DIR__ . '/..' . '/laravel/pint/app/Output/Concerns/InteractsWithSymbols.php',
         'App\\Output\\ProgressOutput' => __DIR__ . '/..' . '/laravel/pint/app/Output/ProgressOutput.php',
@@ -604,6 +606,7 @@ class ComposerStaticInit3e933f4e23998ac352f934c64a64b238
         'App\\Providers\\RouteServiceProvider' => __DIR__ . '/../..' . '/app/Providers/RouteServiceProvider.php',
         'App\\Repositories\\ConfigurationJsonRepository' => __DIR__ . '/..' . '/laravel/pint/app/Repositories/ConfigurationJsonRepository.php',
         'App\\Repositories\\GitPathsRepository' => __DIR__ . '/..' . '/laravel/pint/app/Repositories/GitPathsRepository.php',
+        'App\\Services\\CacheService' => __DIR__ . '/../..' . '/app/Services/CacheService.php',
         'App\\Services\\ImageOptimizationService' => __DIR__ . '/../..' . '/app/Services/ImageOptimizationService.php',
         'App\\ValueObjects\\Issue' => __DIR__ . '/..' . '/laravel/pint/app/ValueObjects/Issue.php',
         'Attribute' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
@@ -719,6 +722,7 @@ class ComposerStaticInit3e933f4e23998ac352f934c64a64b238
         'Database\\Seeders\\CategorySeeder' => __DIR__ . '/../..' . '/database/seeders/CategorySeeder.php',
         'Database\\Seeders\\DatabaseSeeder' => __DIR__ . '/../..' . '/database/seeders/DatabaseSeeder.php',
         'Database\\Seeders\\ProductSeeder' => __DIR__ . '/../..' . '/database/seeders/ProductSeeder.php',
+        'Database\\Seeders\\ReviewSeeder' => __DIR__ . '/../..' . '/database/seeders/ReviewSeeder.php',
         'Database\\Seeders\\UserSeeder' => __DIR__ . '/../..' . '/database/seeders/UserSeeder.php',
         'DateError' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateError.php',
         'DateException' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateException.php',
@@ -7854,9 +7858,9 @@ class ComposerStaticInit3e933f4e23998ac352f934c64a64b238
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit3e933f4e23998ac352f934c64a64b238::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit3e933f4e23998ac352f934c64a64b238::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInit3e933f4e23998ac352f934c64a64b238::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInitabc05a9fc76fbb451eaabe20f423bedf::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInitabc05a9fc76fbb451eaabe20f423bedf::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInitabc05a9fc76fbb451eaabe20f423bedf::$classMap;
 
         }, null, ClassLoader::class);
     }
