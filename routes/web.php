@@ -108,13 +108,18 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
     
     // Reports
     Route::get('/reports', [AdminController::class, 'reports'])->name('reports');
+    Route::get('/export/{type}', [AdminController::class, 'exportReport'])->name('admin.export');
 });
 
 // Payment Routes
 Route::group(['prefix' => 'payment'], function () {
     Route::post('/process/{order}', [PaymentController::class, 'processPayment'])->name('payment.process');
-    Route::get('/vnpay/return', [PaymentController::class, 'vnpayReturn'])->name('payment.vnpay.return');
-    Route::get('/momo/return', [PaymentController::class, 'momoReturn'])->name('payment.momo.return');
+
+    Route::post('/vnpay_payment', [OrderController::class, 'vnpay_payment']);
+    Route::get('/vnpay/return', [OrderController::class, 'vnpayReturn'])->name('vnpay.return');
+
+    Route::get('/momo_return', [OrderController::class, 'momoReturn'])->name('momo.return');
+    Route::post('/momo_ipn', [OrderController::class, 'momoIpn'])->name('momo.ipn');
 });
 
 // Review Routes

@@ -1,27 +1,27 @@
-@extends('admin.layout')
 
-@section('title', 'Báo cáo và thống kê')
-@section('page-title', 'Báo cáo và thống kê')
 
-@section('breadcrumb')
-<li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
+<?php $__env->startSection('title', 'Báo cáo và thống kê'); ?>
+<?php $__env->startSection('page-title', 'Báo cáo và thống kê'); ?>
+
+<?php $__env->startSection('breadcrumb'); ?>
+<li class="breadcrumb-item"><a href="<?php echo e(route('admin.dashboard')); ?>">Dashboard</a></li>
 <li class="breadcrumb-item active">Báo cáo</li>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@section('page-actions')
+<?php $__env->startSection('page-actions'); ?>
 <div class="btn-group">
-    <a href="{{ route('admin.reports') }}?period=7days"
-        class="btn btn-outline-primary btn-admin @if($period === '7days') active @endif">7 ngày</a>
-    <a href="{{ route('admin.reports') }}?period=30days"
-        class="btn btn-outline-primary btn-admin @if($period === '30days') active @endif">30 ngày</a>
-    <a href="{{ route('admin.reports') }}?period=3months"
-        class="btn btn-outline-primary btn-admin @if($period === '3months') active @endif">3 tháng</a>
-    <a href="{{ route('admin.reports') }}?period=1year"
-        class="btn btn-outline-primary btn-admin @if($period === '1year') active @endif">1 năm</a>
+    <a href="<?php echo e(route('admin.reports')); ?>?period=7days"
+        class="btn btn-outline-primary btn-admin <?php if($period === '7days'): ?> active <?php endif; ?>">7 ngày</a>
+    <a href="<?php echo e(route('admin.reports')); ?>?period=30days"
+        class="btn btn-outline-primary btn-admin <?php if($period === '30days'): ?> active <?php endif; ?>">30 ngày</a>
+    <a href="<?php echo e(route('admin.reports')); ?>?period=3months"
+        class="btn btn-outline-primary btn-admin <?php if($period === '3months'): ?> active <?php endif; ?>">3 tháng</a>
+    <a href="<?php echo e(route('admin.reports')); ?>?period=1year"
+        class="btn btn-outline-primary btn-admin <?php if($period === '1year'): ?> active <?php endif; ?>">1 năm</a>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="row">
     <!-- Sales Summary -->
     <div class="col-xl-4 col-md-6 mb-4">
@@ -31,10 +31,11 @@
                     <div class="col">
                         <div class="text-uppercase text-white-50 fw-bold small">Doanh số</div>
                         <div class="h3 mb-0 text-white">
-                            {{ number_format($reportData['sales_summary']['total_sales']) }}₫</div>
+                            <?php echo e(number_format($reportData['sales_summary']['total_sales'])); ?>₫</div>
                         <small class="text-white-50">
                             Kỳ
-                            {{ $period === '7days' ? '7 ngày' : ($period === '30days' ? '30 ngày' : ($period === '3months' ? '3 tháng' : '1 năm')) }}
+                            <?php echo e($period === '7days' ? '7 ngày' : ($period === '30days' ? '30 ngày' : ($period === '3months' ? '3 tháng' : '1 năm'))); ?>
+
                             qua
                         </small>
                     </div>
@@ -53,7 +54,7 @@
                     <div class="col">
                         <div class="text-uppercase text-white-50 fw-bold small">Đơn hàng</div>
                         <div class="h3 mb-0 text-white">
-                            {{ number_format($reportData['sales_summary']['total_orders']) }}</div>
+                            <?php echo e(number_format($reportData['sales_summary']['total_orders'])); ?></div>
                         <small class="text-white-50">Tổng đơn hàng</small>
                     </div>
                     <div class="col-auto">
@@ -70,7 +71,7 @@
                 <div class="row">
                     <div class="col">
                         <div class="text-uppercase fw-bold small">Giá trị TB</div>
-                        <div class="h3 mb-0">{{ number_format($reportData['sales_summary']['avg_order_value']) }}₫</div>
+                        <div class="h3 mb-0"><?php echo e(number_format($reportData['sales_summary']['avg_order_value'])); ?>₫</div>
                         <small class="text-muted">Trung bình mỗi đơn</small>
                     </div>
                     <div class="col-auto">
@@ -92,7 +93,7 @@
                 </h5>
             </div>
             <div class="card-body p-0">
-                @if($reportData['top_products']->count() > 0)
+                <?php if($reportData['top_products']->count() > 0): ?>
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
                         <thead class="table-light">
@@ -105,55 +106,56 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($reportData['top_products'] as $index => $product)
+                            <?php $__currentLoopData = $reportData['top_products']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $product): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <tr>
                                 <td>
                                     <div class="rank-badge">
-                                        @if($index === 0)
+                                        <?php if($index === 0): ?>
                                         <i class="fas fa-medal text-warning"></i>
-                                        @elseif($index === 1)
+                                        <?php elseif($index === 1): ?>
                                         <i class="fas fa-medal text-secondary"></i>
-                                        @elseif($index === 2)
+                                        <?php elseif($index === 2): ?>
                                         <i class="fas fa-medal text-info"></i>
-                                        @else
-                                        {{ $index + 1 }}
-                                        @endif
+                                        <?php else: ?>
+                                        <?php echo e($index + 1); ?>
+
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <img src="{{ $product->image ? asset('storage/' . $product->image) : 'https://via.placeholder.com/40x40?text=No+Image' }}"
+                                        <img src="<?php echo e($product->image ? asset('storage/' . $product->image) : 'https://via.placeholder.com/40x40?text=No+Image'); ?>"
                                             class="img-thumbnail me-2"
                                             style="width: 40px; height: 40px; object-fit: cover;">
                                         <div>
-                                            <h6 class="mb-0">{{ Str::limit($product->name, 30) }}</h6>
-                                            <small class="text-muted">{{ $product->sku }}</small>
+                                            <h6 class="mb-0"><?php echo e(Str::limit($product->name, 30)); ?></h6>
+                                            <small class="text-muted"><?php echo e($product->sku); ?></small>
                                         </div>
                                     </div>
                                 </td>
                                 <td>
                                     <span
-                                        class="badge bg-light text-dark">{{ $product->category->name ?? 'N/A' }}</span>
+                                        class="badge bg-light text-dark"><?php echo e($product->category->name ?? 'N/A'); ?></span>
                                 </td>
                                 <td>
-                                    <span class="fw-bold text-success">{{ $product->total_sold }}</span>
+                                    <span class="fw-bold text-success"><?php echo e($product->total_sold); ?></span>
                                     <small class="text-muted">sản phẩm</small>
                                 </td>
                                 <td>
                                     <span
-                                        class="fw-bold text-primary">{{ number_format($product->total_sold * $product->current_price) }}₫</span>
+                                        class="fw-bold text-primary"><?php echo e(number_format($product->total_sold * $product->current_price)); ?>₫</span>
                                 </td>
                             </tr>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </tbody>
                     </table>
                 </div>
-                @else
+                <?php else: ?>
                 <div class="text-center py-4 text-muted">
                     <i class="fas fa-chart-bar fa-3x mb-3"></i>
                     <p>Chưa có dữ liệu bán hàng</p>
                 </div>
-                @endif
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -167,27 +169,27 @@
                 </h5>
             </div>
             <div class="card-body p-0">
-                @if($reportData['recent_customers']->count() > 0)
+                <?php if($reportData['recent_customers']->count() > 0): ?>
                 <div class="list-group list-group-flush">
-                    @foreach($reportData['recent_customers'] as $customer)
+                    <?php $__currentLoopData = $reportData['recent_customers']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $customer): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                     <div class="list-group-item d-flex justify-content-between align-items-start">
                         <div class="ms-2 me-auto">
-                            <div class="fw-bold">{{ $customer->name }}</div>
-                            <small class="text-muted">{{ $customer->email }}</small>
-                            <br><small class="text-info">{{ $customer->created_at->diffForHumans() }}</small>
+                            <div class="fw-bold"><?php echo e($customer->name); ?></div>
+                            <small class="text-muted"><?php echo e($customer->email); ?></small>
+                            <br><small class="text-info"><?php echo e($customer->created_at->diffForHumans()); ?></small>
                         </div>
                         <span class="badge bg-primary rounded-pill">
-                            {{ $customer->orders_count }} đơn
+                            <?php echo e($customer->orders_count); ?> đơn
                         </span>
                     </div>
-                    @endforeach
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </div>
-                @else
+                <?php else: ?>
                 <div class="text-center py-4 text-muted">
                     <i class="fas fa-users fa-3x mb-3"></i>
                     <p>Chưa có khách hàng mới</p>
                 </div>
-                @endif
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -255,16 +257,17 @@
                             <div class="row text-center">
                                 <div class="col-4">
                                     <div class="fw-bold text-primary">
-                                        {{ number_format($reportData['sales_summary']['total_sales']) }}₫</div>
+                                        <?php echo e(number_format($reportData['sales_summary']['total_sales'])); ?>₫</div>
                                     <small class="text-muted">Doanh thu</small>
                                 </div>
                                 <div class="col-4">
-                                    <div class="fw-bold text-success">{{ $reportData['sales_summary']['total_orders'] }}
+                                    <div class="fw-bold text-success"><?php echo e($reportData['sales_summary']['total_orders']); ?>
+
                                     </div>
                                     <small class="text-muted">Đơn hàng</small>
                                 </div>
                                 <div class="col-4">
-                                    <div class="fw-bold text-info">{{ $reportData['recent_customers']->count() }}</div>
+                                    <div class="fw-bold text-info"><?php echo e($reportData['recent_customers']->count()); ?></div>
                                     <small class="text-muted">KH mới</small>
                                 </div>
                             </div>
@@ -276,9 +279,9 @@
     </div>
 </div>
 
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Category Chart (Sample data - you should replace with real data from controller)
@@ -343,7 +346,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function exportReport(format) {
-    const period = '{{ $period }}';
+    const period = '<?php echo e($period); ?>';
     // TODO: Implement export route
     // window.open(`/admin/reports/export/${format}?period=${period}`, '_blank');
     alert('Export functionality will be implemented soon');
@@ -355,8 +358,9 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function exportReport(format) {
-    const period = '{{ $period }}';
+    const period = '<?php echo e($period); ?>';
     window.location.href = `/admin/export/${format}?period=${period}`;
 }
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
+<?php echo $__env->make('admin.layout', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\BadmintonShop\resources\views/admin/reports.blade.php ENDPATH**/ ?>

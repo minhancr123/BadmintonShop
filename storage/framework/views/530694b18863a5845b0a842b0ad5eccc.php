@@ -1,8 +1,8 @@
-@extends('layouts.app')
 
-@section('title', 'Thanh toán - Badminton Shop')
 
-@section('content')
+<?php $__env->startSection('title', 'Thanh toán - Badminton Shop'); ?>
+
+<?php $__env->startSection('content'); ?>
 <div class="container">
     <div class="row">
         <div class="col-12">
@@ -34,9 +34,9 @@
                 </div>
             </div>
 
-            @if($cartItems && count($cartItems) > 0)
-            <form method="POST" action="{{ route('orders.store') }}" id="checkoutForm">
-                @csrf
+            <?php if($cartItems && count($cartItems) > 0): ?>
+            <form method="POST" action="<?php echo e(route('orders.store')); ?>" id="checkoutForm">
+                <?php echo csrf_field(); ?>
                 <div class="row">
                     <!-- Checkout Form -->
                     <div class="col-lg-8">
@@ -53,40 +53,82 @@
                                         <label for="shipping_name" class="form-label">Họ và tên người nhận <span
                                                 class="text-danger">*</span></label>
                                         <input type="text"
-                                            class="form-control @error('shipping_name') is-invalid @enderror"
+                                            class="form-control <?php $__errorArgs = ['shipping_name'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>"
                                             id="shipping_name" name="shipping_name"
-                                            value="{{ old('shipping_name', auth()->user()->name) }}" required
+                                            value="<?php echo e(old('shipping_name', auth()->user()->name)); ?>" required
                                             placeholder="Nhập họ và tên">
-                                        @error('shipping_name')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
+                                        <?php $__errorArgs = ['shipping_name'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                        <div class="invalid-feedback"><?php echo e($message); ?></div>
+                                        <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label for="shipping_phone" class="form-label">Số điện thoại <span
                                                 class="text-danger">*</span></label>
                                         <input type="tel"
-                                            class="form-control @error('shipping_phone') is-invalid @enderror"
+                                            class="form-control <?php $__errorArgs = ['shipping_phone'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>"
                                             id="shipping_phone" name="shipping_phone"
-                                            value="{{ old('shipping_phone', auth()->user()->phone) }}" required
+                                            value="<?php echo e(old('shipping_phone', auth()->user()->phone)); ?>" required
                                             placeholder="Nhập số điện thoại">
-                                        @error('shipping_phone')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
+                                        <?php $__errorArgs = ['shipping_phone'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                        <div class="invalid-feedback"><?php echo e($message); ?></div>
+                                        <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                                     </div>
                                     <div class="col-12 mb-3">
                                         <label for="shipping_address" class="form-label">Địa chỉ giao hàng <span
                                                 class="text-danger">*</span></label>
-                                        <textarea class="form-control @error('shipping_address') is-invalid @enderror"
+                                        <textarea class="form-control <?php $__errorArgs = ['shipping_address'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>"
                                             id="shipping_address" name="shipping_address" rows="3" required
-                                            placeholder="Nhập địa chỉ chi tiết (số nhà, đường, quận/huyện, tỉnh/thành)">{{ old('shipping_address', auth()->user()->address) }}</textarea>
-                                        @error('shipping_address')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
+                                            placeholder="Nhập địa chỉ chi tiết (số nhà, đường, quận/huyện, tỉnh/thành)"><?php echo e(old('shipping_address', auth()->user()->address)); ?></textarea>
+                                        <?php $__errorArgs = ['shipping_address'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                        <div class="invalid-feedback"><?php echo e($message); ?></div>
+                                        <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                                     </div>
                                     <div class="col-12">
                                         <label for="notes" class="form-label">Ghi chú đơn hàng</label>
                                         <textarea class="form-control" id="notes" name="notes" rows="2"
-                                            placeholder="Ghi chú về đơn hàng, thời gian giao hàng...">{{ old('notes') }}</textarea>
+                                            placeholder="Ghi chú về đơn hàng, thời gian giao hàng..."><?php echo e(old('notes')); ?></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -184,17 +226,31 @@
                         <div class="card mb-4">
                             <div class="card-body">
                                 <div class="form-check">
-                                    <input class="form-check-input @error('terms') is-invalid @enderror" type="checkbox"
+                                    <input class="form-check-input <?php $__errorArgs = ['terms'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>" type="checkbox"
                                         id="terms" name="terms" required>
                                     <label class="form-check-label" for="terms">
                                         Tôi đã đọc và đồng ý với
-                                        <a href="{{ route('terms') }}" target="_blank">Điều khoản sử dụng</a> và
-                                        <a href="{{ route('privacy') }}" target="_blank">Chính sách bảo mật</a>
+                                        <a href="<?php echo e(route('terms')); ?>" target="_blank">Điều khoản sử dụng</a> và
+                                        <a href="<?php echo e(route('privacy')); ?>" target="_blank">Chính sách bảo mật</a>
                                         <span class="text-danger">*</span>
                                     </label>
-                                    @error('terms')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                    <?php $__errorArgs = ['terms'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                    <div class="invalid-feedback"><?php echo e($message); ?></div>
+                                    <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                                 </div>
                             </div>
                         </div>
@@ -209,55 +265,55 @@
                             <div class="card-body">
                                 <!-- Cart Items -->
                                 <div class="order-items mb-3" style="max-height: 300px; overflow-y: auto;">
-                                    @foreach($cartItems as $item)
+                                    <?php $__currentLoopData = $cartItems; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
-                                        <img src="{{ $item['product']->image ? asset('storage/' . $item['product']->image) : 'https://via.placeholder.com/60x60?text=No+Image' }}"
-                                            class="rounded me-3" alt="{{ $item['product']->name }}"
+                                        <img src="<?php echo e($item['product']->image ? asset('storage/' . $item['product']->image) : 'https://via.placeholder.com/60x60?text=No+Image'); ?>"
+                                            class="rounded me-3" alt="<?php echo e($item['product']->name); ?>"
                                             style="width: 60px; height: 60px; object-fit: cover;">
                                         <div class="flex-grow-1">
-                                            <h6 class="mb-1">{{ $item['product']->name }}</h6>
+                                            <h6 class="mb-1"><?php echo e($item['product']->name); ?></h6>
                                             <small class="text-muted">
-                                                {{ $item['quantity'] }} x {{ number_format($item['price']) }}₫
+                                                <?php echo e($item['quantity']); ?> x <?php echo e(number_format($item['price'])); ?>₫
                                             </small>
                                         </div>
                                         <div class="text-end">
-                                            <strong>{{ number_format($item['subtotal']) }}₫</strong>
+                                            <strong><?php echo e(number_format($item['subtotal'])); ?>₫</strong>
                                         </div>
                                     </div>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </div>
 
                                 <!-- Order Totals -->
                                 <div class="order-totals">
                                     <div class="d-flex justify-content-between mb-2">
                                         <span>Tạm tính:</span>
-                                        <span class="subtotal">{{ number_format($total) }}₫</span>
+                                        <span class="subtotal"><?php echo e(number_format($total)); ?>₫</span>
                                     </div>
                                     <div class="d-flex justify-content-between mb-2">
                                         <span>Phí vận chuyển:</span>
                                         <span class="shipping-fee">
-                                            @if($total >= 500000)
+                                            <?php if($total >= 500000): ?>
                                             <span class="text-success">Miễn phí</span>
-                                            @else
+                                            <?php else: ?>
                                             30,000₫
-                                            @endif
+                                            <?php endif; ?>
                                         </span>
                                     </div>
-                                    @if($total >= 500000)
+                                    <?php if($total >= 500000): ?>
                                     <small class="text-success mb-2 d-block">
                                         <i class="fas fa-check"></i> Miễn phí vận chuyển!
                                     </small>
-                                    @else
+                                    <?php else: ?>
                                     <small class="text-muted mb-2 d-block">
                                         <i class="fas fa-info-circle"></i> Mua thêm
-                                        {{ number_format(500000 - $total) }}₫ để được miễn phí vận chuyển
+                                        <?php echo e(number_format(500000 - $total)); ?>₫ để được miễn phí vận chuyển
                                     </small>
-                                    @endif
+                                    <?php endif; ?>
                                     <hr>
                                     <div class="d-flex justify-content-between mb-3">
                                         <strong class="fs-5">Tổng cộng:</strong>
                                         <strong class="text-primary fs-4">
-                                            {{ number_format($total >= 500000 ? $total : $total + 30000) }}₫
+                                            <?php echo e(number_format($total >= 500000 ? $total : $total + 30000)); ?>₫
                                         </strong>
                                     </div>
                                 </div>
@@ -267,7 +323,7 @@
                                     <button type="submit" class="btn btn-success btn-lg" id="placeOrderBtn">
                                         <i class="fas fa-check-circle"></i> Đặt hàng
                                     </button>
-                                    <a href="{{ route('cart.index') }}" class="btn btn-outline-secondary">
+                                    <a href="<?php echo e(route('cart.index')); ?>" class="btn btn-outline-secondary">
                                         <i class="fas fa-arrow-left"></i> Quay lại giỏ hàng
                                     </a>
                                 </div>
@@ -285,22 +341,22 @@
                 </div>
             </form>
 
-            @else
+            <?php else: ?>
             <!-- Empty Cart -->
             <div class="text-center py-5">
                 <i class="fas fa-shopping-cart fa-3x text-muted mb-4"></i>
                 <h4>Giỏ hàng trống</h4>
                 <p class="text-muted mb-4">Bạn không có sản phẩm nào trong giỏ hàng để thanh toán.</p>
-                <a href="{{ route('products.index') }}" class="btn btn-primary btn-lg">
+                <a href="<?php echo e(route('products.index')); ?>" class="btn btn-primary btn-lg">
                     <i class="fas fa-shopping-bag"></i> Tiếp tục mua sắm
                 </a>
             </div>
-            @endif
+            <?php endif; ?>
         </div>
     </div>
 </div>
 
-@push('styles')
+<?php $__env->startPush('styles'); ?>
 <style>
 .progress-steps {
     margin-bottom: 2rem;
@@ -391,9 +447,9 @@
     }
 }
 </style>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Toggle bank transfer details
@@ -468,5 +524,6 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 });
 </script>
-@endpush
-@endsection
+<?php $__env->stopPush(); ?>
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\BadmintonShop\resources\views/orders/checkout.blade.php ENDPATH**/ ?>

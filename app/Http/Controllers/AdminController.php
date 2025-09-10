@@ -7,6 +7,9 @@ use App\Models\Category;
 use App\Models\Order;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Exports\ReportExport;
 use Carbon\Carbon;
 
 class AdminController extends Controller
@@ -355,4 +358,43 @@ class AdminController extends Controller
 
         return view('admin.reports', compact('reportData', 'period'));
     }
+
+    public function exportReport($type, Request $request)
+{
+    $period = $request->get('period', '30days');
+    
+    $startDate = match($period) {
+        '7days' => Carbon::now()->subDays(7),
+        '30days' => Carbon::now()->subDays(30),
+        '3months' => Carbon::now()->subMonths(3),
+        '1year' => Carbon::now()->subYear(),
+        default => Carbon::now()->subDays(30),
+    };
+
+    if ($type === 'excel') {
+        return Excel::download(new ReportExport($startDate, $type), 'report_' . $period . '.xlsx');
+    } elseif ($type === 'csv') {
+        return Excel::download(new ReportExport($startDate, $type), 'report_' . $period . '.csv', \Maatwebsite\Excel\Excel::CSV);
+    } elseif ($type === 'pdf') {
+        $orders = Order::where('created_at', '>=', $startDate)
+            ->where('payment_status', 'paid')
+            ->with(['user', 'orderItems.product'])
+            ->get();
+
+        $reportData = [
+            'orders' => $orders,
+            'sales_summary' => [
+                'total_sales' => $orders->sum('total_amount'),
+                'total_orders' => $orders->count(),
+                'avg_order_value' => $orders->avg('total_amount'),
+            ],
+            'period' => $period,
+        ];
+
+        $pdf = Pdf::loadView('admin.reports.pdf', $reportData);
+        return $pdf->download('report_' . $period . '.pdf');
+    }
+
+    return redirect()->back()->with('error', 'Invalid export type.');
+}
 }

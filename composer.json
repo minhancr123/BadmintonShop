@@ -2,20 +2,28 @@
     "name": "laravel/badminton-shop",
     "type": "project",
     "description": "E-commerce website for selling badminton equipment",
-    "keywords": ["laravel", "framework", "badminton", "ecommerce"],
+    "keywords": [
+        "laravel",
+        "framework",
+        "badminton",
+        "ecommerce"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.1",
-        "barryvdh/laravel-dompdf": "*",
+        "barryvdh/laravel-dompdf": "^3.1",
         "guzzlehttp/guzzle": "^7.2",
+        "illuminate/mail": "*",
         "intervention/image": "^3.11",
         "laravel/framework": "^10.10",
         "laravel/sanctum": "^3.3",
         "laravel/tinker": "^2.8",
         "laravel/ui": "^4.2",
+        "maatwebsite/excel": "^3.1",
         "predis/predis": "^3.2"
     },
     "require-dev": {
+        "barryvdh/laravel-ide-helper": "^3.1",
         "fakerphp/faker": "^1.9.1",
         "laravel/pint": "^1.0",
         "laravel/sail": "^1.18",

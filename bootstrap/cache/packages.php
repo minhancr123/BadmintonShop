@@ -11,6 +11,13 @@
       0 => 'Barryvdh\\DomPDF\\ServiceProvider',
     ),
   ),
+  'barryvdh/laravel-ide-helper' => 
+  array (
+    'providers' => 
+    array (
+      0 => 'Barryvdh\\LaravelIdeHelper\\IdeHelperServiceProvider',
+    ),
+  ),
   'laravel/sail' => 
   array (
     'providers' => 
@@ -37,6 +44,17 @@
     'providers' => 
     array (
       0 => 'Laravel\\Ui\\UiServiceProvider',
+    ),
+  ),
+  'maatwebsite/excel' => 
+  array (
+    'aliases' => 
+    array (
+      'Excel' => 'Maatwebsite\\Excel\\Facades\\Excel',
+    ),
+    'providers' => 
+    array (
+      0 => 'Maatwebsite\\Excel\\ExcelServiceProvider',
     ),
   ),
   'nesbot/carbon' => 
