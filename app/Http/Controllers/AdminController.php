@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use Illuminate\Support\Facades\Hash;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Order;
@@ -396,5 +396,33 @@ class AdminController extends Controller
     }
 
     return redirect()->back()->with('error', 'Invalid export type.');
+}
+//  
+public function blockUser($id)
+{
+    $user = User::findOrFail($id);
+    $user->is_blocked = true;
+    $user->save();
+
+    return redirect()->back()->with('success', 'Đã tạm khóa tài khoản người dùng.');
+}
+
+public function unblockUser($id)
+{
+    $user = User::findOrFail($id);
+    $user->is_blocked = false;
+    $user->save();
+
+    return redirect()->back()->with('success', 'Đã mở khóa tài khoản người dùng.');
+}
+/// resetPassword():
+public function resetPassword(Request $request, $id)
+{
+    $user = User::findOrFail($id);
+    $newPassword = '123'; // mật khẩu mặc định 
+    $user->password = Hash::make($newPassword);
+    $user->save();
+
+    return back()->with('success', 'Đặt lại mật khẩu thành công. Mật khẩu mới: ' . $newPassword);
 }
 }

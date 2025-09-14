@@ -206,7 +206,36 @@
                                 <strong>Mật khẩu</strong>
                                 <div class="text-muted small">Cập nhật lần cuối: {{ Auth::user()->updated_at->diffForHumans() }}</div>
                             </div>
-                            <a href="#" class="btn btn-outline-primary btn-sm">Đổi mật khẩu</a>
+<form method="POST" action="{{ route('password.change') }}">
+@csrf
+
+
+<div class="mb-3">
+<label for="current_password" class="form-label">Mật khẩu hiện tại</label>
+<input type="password" class="form-control @error('current_password') is-invalid @enderror" name="current_password" required>
+@error('current_password')
+<div class="invalid-feedback">{{ $message }}</div>
+@enderror
+</div>
+
+
+<div class="mb-3">
+<label for="new_password" class="form-label">Mật khẩu mới</label>
+<input type="password" class="form-control @error('new_password') is-invalid @enderror" name="new_password" required>
+@error('new_password')
+<div class="invalid-feedback">{{ $message }}</div>
+@enderror
+</div>
+
+
+<div class="mb-3">
+<label for="new_password_confirmation" class="form-label">Xác nhận mật khẩu mới</label>
+<input type="password" class="form-control" name="new_password_confirmation" required>
+</div>
+
+
+<button type="submit" class="btn btn-primary">Đổi mật khẩu</button>
+</form>
                         </div>
                         <div class="d-flex justify-content-between align-items-center">
                             <div>

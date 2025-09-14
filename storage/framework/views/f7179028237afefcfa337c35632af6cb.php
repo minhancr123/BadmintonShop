@@ -207,7 +207,64 @@
                                 <strong>Mật khẩu</strong>
                                 <div class="text-muted small">Cập nhật lần cuối: <?php echo e(Auth::user()->updated_at->diffForHumans()); ?></div>
                             </div>
-                            <a href="#" class="btn btn-outline-primary btn-sm">Đổi mật khẩu</a>
+<form method="POST" action="<?php echo e(route('password.change')); ?>">
+<?php echo csrf_field(); ?>
+
+
+<div class="mb-3">
+<label for="current_password" class="form-label">Mật khẩu hiện tại</label>
+<input type="password" class="form-control <?php $__errorArgs = ['current_password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>" name="current_password" required>
+<?php $__errorArgs = ['current_password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+<div class="invalid-feedback"><?php echo e($message); ?></div>
+<?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+</div>
+
+
+<div class="mb-3">
+<label for="new_password" class="form-label">Mật khẩu mới</label>
+<input type="password" class="form-control <?php $__errorArgs = ['new_password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>" name="new_password" required>
+<?php $__errorArgs = ['new_password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+<div class="invalid-feedback"><?php echo e($message); ?></div>
+<?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+</div>
+
+
+<div class="mb-3">
+<label for="new_password_confirmation" class="form-label">Xác nhận mật khẩu mới</label>
+<input type="password" class="form-control" name="new_password_confirmation" required>
+</div>
+
+
+<button type="submit" class="btn btn-primary">Đổi mật khẩu</button>
+</form>
                         </div>
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
