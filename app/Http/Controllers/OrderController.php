@@ -26,10 +26,17 @@ class OrderController extends Controller
      */
     public function index()
     {
-        $orders = auth()->user()->orders()
-                               ->with('orderItems.product')
-                               ->orderBy('created_at', 'desc')
-                               ->paginate(10);
+        $userId = auth()->id();
+
+        if (!$userId) {
+            abort(403);
+        }
+
+        $orders = Order::query()
+                        ->with('orderItems.product')
+                        ->where('user_id', $userId)
+                        ->latest()
+                        ->paginate(10);
 
         return view('orders.index', compact('orders'));
     }
