@@ -13,6 +13,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\CouponController;
+use App\Models\Order;
 
 /*
 |--------------------------------------------------------------------------
@@ -57,7 +58,13 @@ Route::get('/categories/{slug}', [CategoryController::class, 'show'])->name('cat
 Route::middleware(['auth'])->group(function () {
     // User Dashboard
     Route::get('/dashboard', function () {
-        $orders = auth()->user()->orders()->latest()->limit(5)->get();
+        $userId = auth()->id();
+
+        $orders = Order::query()
+                        ->where('user_id', $userId)
+                        ->latest()
+                        ->limit(5)
+                        ->get();
         return view('dashboard', compact('orders'));
     })->name('dashboard');
 
