@@ -14,6 +14,36 @@ use Illuminate\Support\Str;
  * @method static \Illuminate\Database\Eloquent\Builder|Coupon newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|Coupon newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|Coupon query()
+ * @property int $id
+ * @property string $code
+ * @property string|null $name
+ * @property string|null $description
+ * @property string $discount_type
+ * @property string $discount_value
+ * @property string|null $max_discount_amount
+ * @property string $minimum_order_amount
+ * @property int|null $usage_limit
+ * @property int|null $usage_limit_per_user
+ * @property bool $is_active
+ * @property \Illuminate\Support\Carbon|null $starts_at
+ * @property \Illuminate\Support\Carbon|null $ends_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @method static \Illuminate\Database\Eloquent\Builder|Coupon whereCode($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Coupon whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Coupon whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Coupon whereDiscountType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Coupon whereDiscountValue($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Coupon whereEndsAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Coupon whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Coupon whereIsActive($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Coupon whereMaxDiscountAmount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Coupon whereMinimumOrderAmount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Coupon whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Coupon whereStartsAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Coupon whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Coupon whereUsageLimit($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Coupon whereUsageLimitPerUser($value)
  * @mixin \Eloquent
  */
 class Coupon extends Model

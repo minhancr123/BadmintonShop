@@ -49,6 +49,16 @@ use App\Models\CouponUsage;
  * @method static \Illuminate\Database\Eloquent\Builder|Order whereTotalAmount($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Order whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Order whereUserId($value)
+ * @property string $subtotal_amount
+ * @property string $discount_amount
+ * @property string $shipping_amount
+ * @property int|null $coupon_id
+ * @property string|null $coupon_code
+ * @method static \Illuminate\Database\Eloquent\Builder|Order whereCouponCode($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Order whereCouponId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Order whereDiscountAmount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Order whereShippingAmount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Order whereSubtotalAmount($value)
  * @mixin \Eloquent
  */
 class Order extends Model
