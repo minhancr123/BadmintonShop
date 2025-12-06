@@ -2,16 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Coupon;
+use App\Models\CouponUsage;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Services\CartService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use PhpParser\Node\Stmt\TryCatch;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class OrderController extends Controller
 {
+    private CartService $cartService;
+
+    public function __construct(CartService $cartService)
+    {
+        $this->cartService = $cartService;
+    }
+
     /**
      * Display user's orders.
      */
@@ -45,42 +54,35 @@ class OrderController extends Controller
      */
     public function checkout()
     {
-        $cart = session()->get('cart', []);
-        
+        $cart = $this->cartService->getCart();
+
         if (empty($cart)) {
             return redirect()->route('cart.index')
                             ->with('error', 'Your cart is empty.');
         }
 
-        // Validate cart before checkout
-        $cartController = new CartController();
-        $errors = $cartController->validateCart();
-        
+        if ($message = $this->cartService->revalidateCoupon()) {
+            session()->flash('warning', $message);
+        }
+
+        $errors = $this->cartService->validateCartItems($cart);
+
         if (!empty($errors)) {
             return redirect()->route('cart.index')
                             ->with('error', 'Please fix the following issues: ' . implode(', ', $errors));
         }
 
-        $cartItems = [];
-        $total = 0;
+        $summary = $this->cartService->getSummary();
 
-        foreach ($cart as $id => $item) {
-            $product = Product::find($id);
-            if ($product) {
-                $cartItems[] = [
-                    'id' => $id,
-                    'product' => $product,
-                    'quantity' => $item['quantity'],
-                    'price' => $product->current_price,
-                    'subtotal' => $product->current_price * $item['quantity']
-                ];
-                $total += $product->current_price * $item['quantity'];
-            }
-        }
-
-        $user = auth()->user();
-
-        return view('orders.checkout', compact('cartItems', 'total', 'user'));
+        return view('orders.checkout', [
+            'cartItems' => $summary['items'],
+            'subtotal' => $summary['subtotal'],
+            'shipping' => $summary['shipping'],
+            'discount' => $summary['discount'],
+            'total' => $summary['total'],
+            'coupon' => $summary['coupon'],
+            'user' => auth()->user(),
+        ]);
     }
 
     /**
@@ -88,8 +90,8 @@ class OrderController extends Controller
      */
     public function store(Request $request)
     {
-        $cart = session()->get('cart', []);
-        
+        $cart = $this->cartService->getCart();
+
         if (empty($cart)) {
             return redirect()->route('cart.index')
                             ->with('error', 'Your cart is empty.');
@@ -104,89 +106,111 @@ class OrderController extends Controller
             'notes' => 'nullable|string|max:500',
         ]);
 
+        $errors = $this->cartService->validateCartItems();
 
-        DB::beginTransaction();
-        
-        try {
-            // Calculate total and validate stock
-            $total = 0;
-            $orderItems = [];
+        if (!empty($errors)) {
+            return redirect()->route('cart.index')
+                            ->with('error', 'Please fix the following issues: ' . implode(', ', $errors));
+        }
 
-            foreach ($cart as $id => $item) {
-                $product = Product::lockForUpdate()->find($id);
-                
-                if (!$product || !$product->is_active) {
-                    throw new \Exception("Product {$item['name']} is no longer available.");
-                }
+        if ($message = $this->cartService->revalidateCoupon()) {
+            session()->flash('warning', $message);
+        }
 
-                if ($product->quantity < $item['quantity']) {
-                    throw new \Exception("Insufficient stock for {$product->name}. Available: {$product->quantity}");
-                }
+        $summary = $this->cartService->getSummary();
 
-                $itemTotal = $product->current_price * $item['quantity'];
-                $total += $itemTotal;
+        if (empty($summary['items'])) {
+            return redirect()->route('cart.index')
+                            ->with('error', 'Your cart is empty.');
+        }
 
-                $orderItems[] = [
-                    'product' => $product,
-                    'quantity' => $item['quantity'],
-                    'price' => $product->current_price,
-                    'total' => $itemTotal
-                ];
+        $coupon = $this->cartService->getSessionCoupon();
+        $subtotal = $summary['subtotal'];
 
-                // Reduce product quantity
-                $product->decrement('quantity', $item['quantity']);
-            }
+        if ($coupon) {
+            $error = $this->cartService->validateCoupon($coupon, $subtotal);
 
-            if ($request->payment_method === 'credit_card') {
-            if ($request->sub_payment === 'momo') {
-                DB::rollback();
-                return $this->momoPayment($total, $request);
-            }
-            if ($request->sub_payment === 'vnpay') {
-                DB::rollback();
-                return $this->vnpayPayment($total, $request);
-            }
-            if ($request->sub_payment === 'atm') {
-                DB::rollback();
-                return $this->atmPayment($total, $request);
+            if ($error) {
+                $this->cartService->forgetCoupon();
+
+                return redirect()->route('cart.index')
+                                ->with('error', $error);
             }
         }
 
-            // Create order
-            $order = Order::create([
-                'user_id' => auth()->id(),
-                'total_amount' => $total,
-                'status' => 'pending',
-                'payment_status' => 'pending',
-                'payment_method' => $request->payment_method,
-                'shipping_name' => $request->shipping_name,
-                'shipping_phone' => $request->shipping_phone,
-                'shipping_address' => $request->shipping_address,
-                'notes' => $request->notes,
-            ]);
+        $shippingData = [
+            'shipping_name' => $request->shipping_name,
+            'shipping_phone' => $request->shipping_phone,
+            'shipping_address' => $request->shipping_address,
+            'notes' => $request->notes,
+        ];
 
-            // Create order items
-            foreach ($orderItems as $item) {
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'product_id' => $item['product']->id,
-                    'quantity' => $item['quantity'],
-                    'price' => $item['price'],
-                    'total' => $item['total']
-                ]);
+        if (round($summary['total']) <= 0) {
+            try {
+                $order = $this->persistOrder(
+                    $cart,
+                    $shippingData,
+                    $coupon ? 'coupon' : $request->payment_method,
+                    'paid',
+                    $coupon
+                );
+
+                session()->forget(['cart', 'pending_order']);
+                $this->cartService->forgetCoupon();
+
+                return redirect()->route('orders.show', $order)
+                                ->with('success', 'Order placed successfully! Order number: ' . $order->order_number);
+            } catch (\Exception $e) {
+                return redirect()->back()
+                                ->withInput()
+                                ->with('error', 'Failed to place order: ' . $e->getMessage());
+            }
+        }
+
+        if ($request->payment_method === 'credit_card') {
+            if (!$request->filled('sub_payment')) {
+                return redirect()->back()
+                                ->withInput()
+                                ->with('error', 'Vui lòng chọn cổng thanh toán.');
             }
 
-            DB::commit();
+            $pendingOrder = array_merge($shippingData, [
+                'cart' => $cart,
+                'coupon_id' => $coupon ? $coupon->id : null,
+                'subtotal_amount' => $summary['subtotal'],
+                'shipping_amount' => $summary['shipping'],
+                'discount_amount' => $summary['discount'],
+                'total_amount' => $summary['total'],
+            ]);
 
-            // Clear cart
-            session()->forget('cart');
+            if ($request->sub_payment === 'momo') {
+                return $this->momoPayment($pendingOrder, $request);
+            }
+
+            if ($request->sub_payment === 'vnpay') {
+                return $this->vnpayPayment($pendingOrder, $request);
+            }
+
+            return redirect()->back()
+                            ->withInput()
+                            ->with('error', 'Phương thức thanh toán không được hỗ trợ.');
+        }
+
+        try {
+            $order = $this->persistOrder(
+                $cart,
+                $shippingData,
+                $request->payment_method,
+                'pending',
+                $coupon
+            );
+
+            session()->forget(['cart', 'pending_order']);
+            $this->cartService->forgetCoupon();
 
             return redirect()->route('orders.show', $order)
                             ->with('success', 'Order placed successfully! Order number: ' . $order->order_number);
-
         } catch (\Exception $e) {
-            DB::rollback();
-            
             return redirect()->back()
                             ->withInput()
                             ->with('error', 'Failed to place order: ' . $e->getMessage());
@@ -333,18 +357,25 @@ class OrderController extends Controller
        
     }
 
-    private function momoPayment($amount, Request $request)
+    private function momoPayment(array $pendingOrder, Request $request)
     {
+        $amount = (int) round($pendingOrder['total_amount'] ?? 0);
+
+        if ($amount <= 0) {
+            return redirect()->route('cart.index')
+                            ->with('error', 'Số tiền thanh toán không hợp lệ.');
+        }
+
         $endpoint    = "https://test-payment.momo.vn/v2/gateway/api/create";
         $partnerCode = "MOMOBKUN20180529";
         $accessKey   = "klm05TvNBzhg7h7j";
         $secretKey   = "at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa";
 
-        $orderId     = time() . "";
+        $orderId     = (string) time();
         $orderInfo   = "Thanh toán đơn hàng #" . $orderId;
         $redirectUrl = route('momo.return');
         $ipnUrl      = route('momo.ipn');
-        $requestId   = time() . "";
+        $requestId   = (string) time();
         $requestType = "payWithATM";
         $extraData   = "";
 
@@ -380,15 +411,17 @@ class OrderController extends Controller
         $result = $this->execPostRequest($endpoint, json_encode($data));
         $jsonResult = json_decode($result, true);
 
-        // Lưu tạm thông tin order vào session để khi MoMo trả về sẽ xử lý
-        session()->put('pending_order', [
-            'shipping_name' => $request->shipping_name,
-            'shipping_phone' => $request->shipping_phone,
-            'shipping_address' => $request->shipping_address,
-            'notes' => $request->notes,
-            'cart' => session()->get('cart', []),
+        if (!is_array($jsonResult) || empty($jsonResult['payUrl'])) {
+            return redirect()->route('cart.index')
+                            ->with('error', 'Không thể khởi tạo thanh toán MoMo. Vui lòng thử lại.');
+        }
+
+        session()->put('pending_order', array_merge($pendingOrder, [
             'amount' => $amount,
-        ]);
+            'payment_gateway' => 'momo',
+            'order_id' => $orderId,
+            'request_id' => $requestId,
+        ]));
 
         return redirect()->to($jsonResult['payUrl']);
     }
@@ -416,12 +449,19 @@ class OrderController extends Controller
             return redirect()->route('cart.index')->with('error', 'Không tìm thấy đơn hàng tạm.');
         }
 
-        if ($request->resultCode == 0) {
-            // Thanh toán thành công → tạo order trong DB
-            return $this->createOrderAfterMomo($pendingOrder, 'paid');
-        } else {
-            return redirect()->route('cart.index')->with('error', 'Thanh toán MoMo thất bại.');
+        if ((int) $request->resultCode === 0) {
+            try {
+                $order = $this->createOrderAfterMomo($pendingOrder, 'paid');
+
+                return redirect()->route('orders.show', $order)
+                                ->with('success', 'Thanh toán MoMo thành công!');
+            } catch (\Exception $e) {
+                return redirect()->route('cart.index')
+                                ->with('error', 'Lỗi tạo đơn sau khi thanh toán: ' . $e->getMessage());
+            }
         }
+
+        return redirect()->route('cart.index')->with('error', 'Thanh toán MoMo thất bại.');
     }
 
     public function momoIpn(Request $request)
@@ -430,105 +470,68 @@ class OrderController extends Controller
         return response()->json(['message' => 'IPN OK']);
     }
 
-    private function createOrderAfterMomo($pendingOrder, $paymentStatus)
+    private function createOrderAfterMomo(array $pendingOrder, string $paymentStatus): Order
     {
-        DB::beginTransaction();
-        try {
-            $total = $pendingOrder['amount'];
-            $cart = $pendingOrder['cart'];
-
-            $order = Order::create([
-                'user_id' => auth()->id(),
-                'total_amount' => $total,
-                'status' => 'pending',
-                'payment_status' => $paymentStatus,
-                'payment_method' => 'momo',
-                'shipping_name' => $pendingOrder['shipping_name'],
-                'shipping_phone' => $pendingOrder['shipping_phone'],
-                'shipping_address' => $pendingOrder['shipping_address'],
-                'notes' => $pendingOrder['notes'],
-            ]);
-
-            foreach ($cart as $id => $item) {
-                $product = Product::find($id);
-                if ($product) {
-                    $product->decrement('quantity', $item['quantity']);
-                    OrderItem::create([
-                        'order_id' => $order->id,
-                        'product_id' => $product->id,
-                        'quantity' => $item['quantity'],
-                        'price' => $product->current_price,
-                        'total' => $product->current_price * $item['quantity']
-                    ]);
-                }
-            }
-
-            DB::commit();
-            session()->forget(['cart', 'pending_order']);
-            return redirect()->route('orders.show', $order)->with('success', 'Thanh toán MoMo thành công!');
-        } catch (\Exception $e) {
-            DB::rollback();
-            return redirect()->route('cart.index')->with('error', 'Lỗi tạo đơn sau khi thanh toán: ' . $e->getMessage());
-        }
+        return $this->finalizePendingOrder($pendingOrder, 'momo', $paymentStatus);
     }
 
-    public function vnpayPayment($amount, Request $request)
-{
-    date_default_timezone_set('Asia/Ho_Chi_Minh');
+    private function vnpayPayment(array $pendingOrder, Request $request)
+    {
+        date_default_timezone_set('Asia/Ho_Chi_Minh');
 
-    $vnp_TmnCode    = env('VNPAY_TMN_CODE', '1VYBIYQP');
-    $vnp_HashSecret = env('VNPAY_HASH_SECRET', 'NOH6MBGNLQL9O9OMMFMZ2AX8NIEP50W1');
-    $vnp_Url        = env('VNPAY_URL', 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html');
-    $vnp_Returnurl  = route('vnpay.return'); // Đảm bảo đây là HTTPS full URL
+        $amount = (int) round($pendingOrder['total_amount'] ?? 0);
 
-    // Tạo TxnRef unique hơn
-    $vnp_TxnRef = 'ORDER_' . time() . '_' . substr(md5(uniqid()), 0, 4); // Ví dụ: ORDER_1725970000_abcd
-    $vnp_OrderInfo = "Thanh toán đơn hàng #" . $vnp_TxnRef;
-    $vnp_OrderType = "billpayment";
-    $vnp_Amount    = intval($amount) * 100;
-    $vnp_Locale    = 'vn';
-    $vnp_IpAddr    = $request->ip();
+        if ($amount <= 0) {
+            return redirect()->route('cart.index')
+                            ->with('error', 'Số tiền thanh toán không hợp lệ.');
+        }
 
-    $inputData = [
-        "vnp_Version"    => "2.1.0",
-        "vnp_TmnCode"    => $vnp_TmnCode,
-        "vnp_Amount"     => $vnp_Amount,
-        "vnp_Command"    => "pay",
-        "vnp_CreateDate" => date('YmdHis'),
-        "vnp_CurrCode"   => "VND",
-        "vnp_IpAddr"     => $vnp_IpAddr,
-        "vnp_Locale"     => $vnp_Locale,
-        "vnp_OrderInfo"  => $vnp_OrderInfo,
-        "vnp_OrderType"  => $vnp_OrderType,
-        "vnp_ReturnUrl"  => $vnp_Returnurl,
-        "vnp_TxnRef"     => $vnp_TxnRef
-    ];
+        $vnp_TmnCode    = env('VNPAY_TMN_CODE', '1VYBIYQP');
+        $vnp_HashSecret = env('VNPAY_HASH_SECRET', 'NOH6MBGNLQL9O9OMMFMZ2AX8NIEP50W1');
+        $vnp_Url        = env('VNPAY_URL', 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html');
+        $vnp_Returnurl  = route('vnpay.return');
 
-    ksort($inputData);
-    $hashdata = http_build_query($inputData, '', '&');
-    $query    = http_build_query($inputData, '', '&');
-    $vnpSecureHash = hash_hmac('sha512', $hashdata, $vnp_HashSecret);
+        $vnp_TxnRef = 'ORDER_' . time() . '_' . substr(md5(uniqid()), 0, 4);
+        $vnp_OrderInfo = "Thanh toán đơn hàng #" . $vnp_TxnRef;
+        $vnp_OrderType = "billpayment";
+        $vnp_Amount    = $amount * 100;
+        $vnp_Locale    = 'vn';
+        $vnp_IpAddr    = $request->ip();
 
-    $vnp_Url = $vnp_Url . "?" . $query . "&vnp_SecureHash=" . $vnpSecureHash;
+        $inputData = [
+            "vnp_Version"    => "2.1.0",
+            "vnp_TmnCode"    => $vnp_TmnCode,
+            "vnp_Amount"     => $vnp_Amount,
+            "vnp_Command"    => "pay",
+            "vnp_CreateDate" => date('YmdHis'),
+            "vnp_CurrCode"   => "VND",
+            "vnp_IpAddr"     => $vnp_IpAddr,
+            "vnp_Locale"     => $vnp_Locale,
+            "vnp_OrderInfo"  => $vnp_OrderInfo,
+            "vnp_OrderType"  => $vnp_OrderType,
+            "vnp_ReturnUrl"  => $vnp_Returnurl,
+            "vnp_TxnRef"     => $vnp_TxnRef
+        ];
 
-    // Lưu session với TxnRef mới
-    session()->put('pending_order', [
-        'amount'          => $amount,
-        'shipping_name'   => $request->shipping_name ?? null,
-        'shipping_phone'  => $request->shipping_phone ?? null,
-        'shipping_address' => $request->shipping_address ?? null,
-        'notes'           => $request->notes ?? null,
-        'cart'            => session()->get('cart', []),
-        'vnp_TxnRef'      => $vnp_TxnRef
-    ]);
+        ksort($inputData);
+        $hashdata = http_build_query($inputData, '', '&');
+        $query    = http_build_query($inputData, '', '&');
+        $vnpSecureHash = hash_hmac('sha512', $hashdata, $vnp_HashSecret);
 
-    // Log để debug
-    \Log::info('VNPay Full URL: ' . $vnp_Url);
-    \Log::info('VNPay Return URL: ' . $vnp_Returnurl);
-    \Log::info('VNPay TxnRef: ' . $vnp_TxnRef);
+        $vnp_Url = $vnp_Url . "?" . $query . "&vnp_SecureHash=" . $vnpSecureHash;
 
-    return redirect()->away($vnp_Url);
-}
+        session()->put('pending_order', array_merge($pendingOrder, [
+            'amount' => $amount,
+            'vnp_TxnRef' => $vnp_TxnRef,
+            'payment_gateway' => 'vnpay',
+        ]));
+
+        \Log::info('VNPay Full URL: ' . $vnp_Url);
+        \Log::info('VNPay Return URL: ' . $vnp_Returnurl);
+        \Log::info('VNPay TxnRef: ' . $vnp_TxnRef);
+
+        return redirect()->away($vnp_Url);
+    }
 
     public function vnpayReturn(Request $request)
 {
@@ -557,68 +560,174 @@ class OrderController extends Controller
     \Log::info('VNPay Return Secure Hash: ' . $vnp_SecureHash);
     \Log::info('Calculated Hash: ' . $calculatedHash);
 
-    if ($calculatedHash === $vnp_SecureHash) {
-        if ($request->vnp_ResponseCode == '00' && $request->vnp_TxnRef == $pendingOrder['vnp_TxnRef']) {
-            // Thanh toán thành công, tạo đơn hàng
-            $order = $this->createOrderAfterVnpay($pendingOrder, 'paid');
-            return redirect()->route('orders.show', $order)
-                            ->with('success', 'Thanh toán VNPay thành công!');
-        } else {
-            return redirect()->route('cart.index')
-                            ->with('error', 'Thanh toán VNPay thất bại hoặc bị hủy. Mã lỗi: ' . $request->vnp_ResponseCode);
-        }
-    } else {
+    if ($calculatedHash !== $vnp_SecureHash) {
         return redirect()->route('cart.index')
                         ->with('error', 'Chữ ký VNPay không hợp lệ.');
     }
+
+    if ($request->vnp_ResponseCode == '00' && $request->vnp_TxnRef == ($pendingOrder['vnp_TxnRef'] ?? null)) {
+        try {
+            $order = $this->createOrderAfterVnpay($pendingOrder, 'paid');
+
+            return redirect()->route('orders.show', $order)
+                            ->with('success', 'Thanh toán VNPay thành công!');
+        } catch (\Exception $e) {
+            return redirect()->route('cart.index')
+                            ->with('error', 'Lỗi tạo đơn sau khi thanh toán VNPay: ' . $e->getMessage());
+        }
+    }
+
+    return redirect()->route('cart.index')
+                    ->with('error', 'Thanh toán VNPay thất bại hoặc bị hủy. Mã lỗi: ' . $request->vnp_ResponseCode);
 }
-private function createOrderAfterVnpay($pendingOrder, $paymentStatus)
-{
-    DB::beginTransaction();
-    try {
-        $total = $pendingOrder['amount'];
-        $cart = $pendingOrder['cart'];
+    private function createOrderAfterVnpay(array $pendingOrder, string $paymentStatus): Order
+    {
+        return $this->finalizePendingOrder($pendingOrder, 'vnpay', $paymentStatus);
+    }
 
-        // Tạo đơn hàng
-        $order = Order::create([
-            'user_id' => auth()->id(),
-            'total_amount' => $total,
-            'status' => 'pending',
-            'payment_status' => $paymentStatus,
-            'payment_method' => 'vnpay',
-            'shipping_name' => $pendingOrder['shipping_name'],
-            'shipping_phone' => $pendingOrder['shipping_phone'],
-            'shipping_address' => $pendingOrder['shipping_address'],
-            'notes' => $pendingOrder['notes'],
-        ]);
+    private function finalizePendingOrder(array $pendingOrder, string $paymentMethod, string $paymentStatus): Order
+    {
+        $cart = $pendingOrder['cart'] ?? [];
 
-        // Tạo chi tiết đơn hàng và cập nhật số lượng sản phẩm
-        foreach ($cart as $id => $item) {
-            $product = Product::lockForUpdate()->find($id);
-            if (!$product || !$product->is_active) {
-                throw new \Exception("Sản phẩm {$item['name']} không còn tồn tại.");
-            }
-            if ($product->quantity < $item['quantity']) {
-                throw new \Exception("Sản phẩm {$product->name} không đủ số lượng. Còn lại: {$product->quantity}");
-            }
-
-            $product->decrement('quantity', $item['quantity']);
-            OrderItem::create([
-                'order_id' => $order->id,
-                'product_id' => $product->id,
-                'quantity' => $item['quantity'],
-                'price' => $product->current_price,
-                'total' => $product->current_price * $item['quantity']
-            ]);
+        if (empty($cart)) {
+            throw new \Exception('Giỏ hàng trống.');
         }
 
-        DB::commit();
+        $shippingData = [
+            'shipping_name' => $pendingOrder['shipping_name'] ?? null,
+            'shipping_phone' => $pendingOrder['shipping_phone'] ?? null,
+            'shipping_address' => $pendingOrder['shipping_address'] ?? null,
+            'notes' => $pendingOrder['notes'] ?? null,
+        ];
+
+        foreach (['shipping_name', 'shipping_phone', 'shipping_address'] as $field) {
+            if (empty($shippingData[$field])) {
+                throw new \Exception('Thiếu thông tin giao hàng.');
+            }
+        }
+
+        $coupon = null;
+
+        if (!empty($pendingOrder['coupon_id'])) {
+            $coupon = Coupon::find($pendingOrder['coupon_id']);
+        }
+
+        $order = $this->persistOrder($cart, $shippingData, $paymentMethod, $paymentStatus, $coupon);
+
         session()->forget(['cart', 'pending_order']);
+        $this->cartService->forgetCoupon();
+
         return $order;
-    } catch (\Exception $e) {
-        DB::rollback();
-        throw new \Exception('Lỗi tạo đơn sau khi thanh toán VNPay: ' . $e->getMessage());
     }
-}
+
+    private function persistOrder(array $cart, array $shippingData, string $paymentMethod, string $paymentStatus, ?Coupon $coupon = null): Order
+    {
+        $userId = auth()->id();
+
+        if (!$userId) {
+            throw new \Exception('Bạn cần đăng nhập để tiếp tục.');
+        }
+
+        return DB::transaction(function () use ($cart, $shippingData, $paymentMethod, $paymentStatus, $coupon, $userId) {
+            if (empty($cart)) {
+                throw new \Exception('Giỏ hàng của bạn đang trống.');
+            }
+
+            $subtotal = 0;
+            $orderItemsData = [];
+
+            foreach ($cart as $id => $item) {
+                $product = Product::lockForUpdate()->find($id);
+
+                if (!$product || !$product->is_active) {
+                    throw new \Exception("Sản phẩm '{$item['name']}' hiện không khả dụng.");
+                }
+
+                $quantity = (int) ($item['quantity'] ?? 0);
+
+                if ($quantity <= 0) {
+                    throw new \Exception("Số lượng không hợp lệ cho sản phẩm '{$product->name}'.");
+                }
+
+                if ($product->quantity < $quantity) {
+                    throw new \Exception("Sản phẩm '{$product->name}' chỉ còn {$product->quantity} sản phẩm.");
+                }
+
+                $price = $product->current_price;
+                $lineTotal = $price * $quantity;
+
+                $subtotal += $lineTotal;
+
+                $orderItemsData[] = [
+                    'product' => $product,
+                    'quantity' => $quantity,
+                    'price' => $price,
+                    'total' => $lineTotal,
+                ];
+            }
+
+            $shippingAmount = $this->cartService->calculateShipping($subtotal);
+            $discountAmount = 0;
+            $couponCode = null;
+
+            if ($coupon) {
+                $error = $this->cartService->validateCoupon($coupon, $subtotal);
+
+                if ($error) {
+                    throw new \Exception($error);
+                }
+
+                $discountAmount = $this->cartService->calculateDiscount($coupon, $subtotal);
+
+                if ($discountAmount > 0) {
+                    $couponCode = $coupon->code;
+                } else {
+                    $coupon = null;
+                }
+            }
+
+            $totalAmount = max(0, $subtotal + $shippingAmount - $discountAmount);
+
+            $order = Order::create([
+                'user_id' => $userId,
+                'subtotal_amount' => $subtotal,
+                'discount_amount' => $discountAmount,
+                'shipping_amount' => $shippingAmount,
+                'total_amount' => $totalAmount,
+                'coupon_id' => $coupon ? $coupon->id : null,
+                'coupon_code' => $couponCode,
+                'status' => 'pending',
+                'payment_status' => $paymentStatus,
+                'payment_method' => $paymentMethod,
+                'shipping_name' => $shippingData['shipping_name'],
+                'shipping_phone' => $shippingData['shipping_phone'],
+                'shipping_address' => $shippingData['shipping_address'],
+                'notes' => $shippingData['notes'] ?? null,
+            ]);
+
+            foreach ($orderItemsData as $itemData) {
+                $itemData['product']->decrement('quantity', $itemData['quantity']);
+
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => $itemData['product']->id,
+                    'quantity' => $itemData['quantity'],
+                    'price' => $itemData['price'],
+                    'total' => $itemData['total'],
+                ]);
+            }
+
+            if ($coupon && $discountAmount > 0) {
+                CouponUsage::create([
+                    'coupon_id' => $coupon->id,
+                    'order_id' => $order->id,
+                    'user_id' => $userId,
+                    'discount_amount' => $discountAmount,
+                ]);
+            }
+
+            return $order;
+        });
+    }
 
 }

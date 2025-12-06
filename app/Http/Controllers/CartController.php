@@ -3,35 +3,41 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Services\CartService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class CartController extends Controller
 {
     /**
+     * @var CartService
+     */
+    private $cartService;
+
+    public function __construct(CartService $cartService)
+    {
+        $this->cartService = $cartService;
+    }
+
+    /**
      * Display the shopping cart.
      */
     public function index()
     {
-        $cart = session()->get('cart', []);
-        $cartItems = [];
-        $total = 0;
-
-        foreach ($cart as $id => $item) {
-            $product = Product::find($id);
-            if ($product) {
-                $cartItems[] = [
-                    'id' => $id,
-                    'product' => $product,
-                    'quantity' => $item['quantity'],
-                    'price' => $product->current_price,
-                    'subtotal' => $product->current_price * $item['quantity']
-                ];
-                $total += $product->current_price * $item['quantity'];
-            }
+        if ($message = $this->cartService->revalidateCoupon()) {
+            session()->flash('warning', $message);
         }
 
-        return view('cart.index', compact('cartItems', 'total'));
+        $summary = $this->cartService->getSummary();
+
+        return view('cart.index', [
+            'cartItems' => $summary['items'],
+            'subtotal' => $summary['subtotal'],
+            'shipping' => $summary['shipping'],
+            'discount' => $summary['discount'],
+            'total' => $summary['total'],
+            'coupon' => $summary['coupon'],
+        ]);
     }
 
     /**
@@ -68,8 +74,13 @@ class CartController extends Controller
 
         session()->put('cart', $cart);
 
-        return redirect()->back()
-                        ->with('success', 'Product added to cart successfully!');
+        $redirect = redirect()->back()->with('success', 'Product added to cart successfully!');
+
+        if ($message = $this->cartService->revalidateCoupon()) {
+            $redirect->with('warning', $message);
+        }
+
+        return $redirect;
     }
 
     /**
@@ -142,17 +153,24 @@ class CartController extends Controller
                 ]);
 
                 if ($request->expectsJson()) {
+                    $couponWarning = $this->cartService->revalidateCoupon();
                     $response = [
                         'success' => true,
                         'message' => 'Cart updated successfully!',
-                        'new_quantity' => $quantity
+                        'new_quantity' => $quantity,
+                        'coupon_warning' => $couponWarning,
                     ];
                     \Log::info('Returning JSON success response', $response);
                     return response()->json($response);
                 }
 
-                return redirect()->route('cart.index')
-                                ->with('success', 'Cart updated successfully!');
+                $redirect = redirect()->route('cart.index')->with('success', 'Cart updated successfully!');
+
+                if ($message = $this->cartService->revalidateCoupon()) {
+                    $redirect->with('warning', $message);
+                }
+
+                return $redirect;
             }
             
             \Log::warning('Product not found in cart', ['product_id' => $id, 'cart_keys' => array_keys($cart)]);
@@ -229,14 +247,22 @@ class CartController extends Controller
                 ]);
 
                 if ($request->expectsJson()) {
+                    $couponWarning = $this->cartService->revalidateCoupon();
+
                     return response()->json([
                         'success' => true,
-                        'message' => 'Product removed from cart successfully!'
+                        'message' => 'Product removed from cart successfully!',
+                        'coupon_warning' => $couponWarning,
                     ]);
                 }
 
-                return redirect()->route('cart.index')
-                                ->with('success', 'Product removed from cart successfully!');
+                $redirect = redirect()->route('cart.index')->with('success', 'Product removed from cart successfully!');
+
+                if ($message = $this->cartService->revalidateCoupon()) {
+                    $redirect->with('warning', $message);
+                }
+
+                return $redirect;
             }
 
             \Log::warning('Cart Remove Failed - Product Not Found', [
@@ -277,6 +303,7 @@ class CartController extends Controller
     public function clear()
     {
         session()->forget('cart');
+        $this->cartService->forgetCoupon();
 
         return redirect()->route('cart.index')
                         ->with('success', 'Cart cleared successfully!');
@@ -287,7 +314,7 @@ class CartController extends Controller
      */
     public function getCartCount()
     {
-        $cart = session()->get('cart', []);
+        $cart = $this->cartService->getCart();
         $count = array_sum(array_column($cart, 'quantity'));
         
         return response()->json(['count' => $count]);
@@ -298,17 +325,7 @@ class CartController extends Controller
      */
     public function getCartTotal()
     {
-        $cart = session()->get('cart', []);
-        $total = 0;
-
-        foreach ($cart as $id => $item) {
-            $product = Product::find($id);
-            if ($product) {
-                $total += $product->current_price * $item['quantity'];
-            }
-        }
-
-        return $total;
+        return $this->cartService->calculateSubtotal();
     }
 
     /**
@@ -316,32 +333,6 @@ class CartController extends Controller
      */
     public function validateCart()
     {
-        $cart = session()->get('cart', []);
-        $errors = [];
-
-        foreach ($cart as $id => $item) {
-            $product = Product::find($id);
-            
-            if (!$product) {
-                $errors[] = "Product '{$item['name']}' is no longer available.";
-                continue;
-            }
-
-            if (!$product->is_active) {
-                $errors[] = "Product '{$product->name}' is currently unavailable.";
-                continue;
-            }
-
-            if ($product->quantity < $item['quantity']) {
-                $errors[] = "Only {$product->quantity} units of '{$product->name}' are available, but you have {$item['quantity']} in your cart.";
-                continue;
-            }
-
-            if ($product->quantity == 0) {
-                $errors[] = "Product '{$product->name}' is out of stock.";
-            }
-        }
-
-        return $errors;
+        return $this->cartService->validateCartItems();
     }
 }

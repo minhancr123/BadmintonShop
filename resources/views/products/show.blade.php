@@ -83,15 +83,25 @@
                             </div>
                             <div>
                                 <a href="{{ route('products.reviews', $product) }}" class="text-decoration-none">Xem tất cả đánh giá</a>
-                                @if(!$userReview && auth()->check())
-                                    | <a href="{{ route('reviews.create', $product) }}" class="text-decoration-none">Viết đánh giá</a>
+                                @if(auth()->check())
+                                    @if(!$userReview)
+                                        @if($hasPurchased)
+                                            | <a href="{{ route('reviews.create', $product) }}" class="text-decoration-none">Viết đánh giá</a>
+                                        @else
+                                            | <span class="text-muted" title="Bạn cần mua sản phẩm này trước khi đánh giá">Viết đánh giá</span>
+                                        @endif
+                                    @endif
                                 @endif
                             </div>
                         @else
                             <div class="mb-2">
                                 <span class="text-muted">Chưa có đánh giá</span>
                                 @if(auth()->check() && !$userReview)
-                                    <a href="{{ route('reviews.create', $product) }}" class="text-decoration-none ms-2">Viết đánh giá đầu tiên</a>
+                                    @if($hasPurchased)
+                                        <a href="{{ route('reviews.create', $product) }}" class="text-decoration-none ms-2">Viết đánh giá đầu tiên</a>
+                                    @else
+                                        <span class="text-muted ms-2" title="Bạn cần mua sản phẩm này trước khi đánh giá">Viết đánh giá đầu tiên</span>
+                                    @endif
                                 @endif
                             </div>
                         @endif
@@ -320,7 +330,12 @@
                                 <h5 class="mt-3">Chưa có đánh giá nào</h5>
                                 <p class="text-muted">Hãy là người đầu tiên đánh giá sản phẩm này!</p>
                                 @if(auth()->check())
-                                    <a href="{{ route('reviews.create', $product) }}" class="btn btn-primary">Viết đánh giá</a>
+                                    @if($hasPurchased)
+                                        <a href="{{ route('reviews.create', $product) }}" class="btn btn-primary">Viết đánh giá</a>
+                                    @else
+                                        <button class="btn btn-secondary" disabled title="Bạn cần mua sản phẩm này trước khi đánh giá">Viết đánh giá</button>
+                                        <p class="text-muted mt-2"><small>Bạn cần mua và nhận sản phẩm này để đánh giá</small></p>
+                                    @endif
                                 @else
                                     <a href="{{ route('login') }}" class="btn btn-primary">Đăng nhập để viết đánh giá</a>
                                 @endif
@@ -330,9 +345,16 @@
                         <!-- Write Review Button -->
                         @if(auth()->check() && !$userReview && $reviewStats['total'] > 0)
                             <div class="text-center mt-4">
-                                <a href="{{ route('reviews.create', $product) }}" class="btn btn-success">
-                                    <i class="fas fa-star"></i> Viết đánh giá
-                                </a>
+                                @if($hasPurchased)
+                                    <a href="{{ route('reviews.create', $product) }}" class="btn btn-success">
+                                        <i class="fas fa-star"></i> Viết đánh giá
+                                    </a>
+                                @else
+                                    <button class="btn btn-secondary" disabled title="Bạn cần mua sản phẩm này trước khi đánh giá">
+                                        <i class="fas fa-star"></i> Viết đánh giá
+                                    </button>
+                                    <p class="text-muted mt-2"><small>Bạn cần mua và nhận sản phẩm này để đánh giá</small></p>
+                                @endif
                             </div>
                         @endif
                     </div>

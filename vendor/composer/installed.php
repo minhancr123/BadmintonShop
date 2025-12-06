@@ -3,7 +3,7 @@
         'name' => 'laravel/badminton-shop',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '1965fac407262df88800a22200b005519861baea',
+        'reference' => '4bd89864c24c0b98114421a154e13040dbe71f61',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -490,7 +490,7 @@
         'laravel/badminton-shop' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '1965fac407262df88800a22200b005519861baea',
+            'reference' => '4bd89864c24c0b98114421a154e13040dbe71f61',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

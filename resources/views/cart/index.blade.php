@@ -109,43 +109,71 @@
                                 <div class="order-summary">
                                     <div class="d-flex justify-content-between mb-2">
                                         <span>Tạm tính:</span>
-                                        <span class="subtotal">{{ number_format($total) }}₫</span>
+                                        <span class="subtotal">{{ number_format($subtotal) }}₫</span>
                                     </div>
+                                    
+                                    @if($discount > 0)
+                                    <div class="d-flex justify-content-between mb-2 text-success">
+                                        <span>Giảm giá{{ $coupon ? ' (' . $coupon['code'] . ')' : '' }}:</span>
+                                        <span>-{{ number_format($discount) }}₫</span>
+                                    </div>
+                                    @endif
+
                                     <div class="d-flex justify-content-between mb-2">
                                         <span>Phí vận chuyển:</span>
                                         <span class="shipping-fee">
-                                            @if($total >= 500000)
+                                            @if($shipping == 0)
                                                 <span class="text-success">Miễn phí</span>
                                             @else
-                                                30,000₫
+                                                {{ number_format($shipping) }}₫
                                             @endif
                                         </span>
                                     </div>
-                                    @if($total >= 500000)
+                                    
+                                    @if($shipping == 0)
                                         <small class="text-success mb-2 d-block">
                                             <i class="fas fa-check"></i> Bạn được miễn phí vận chuyển!
                                         </small>
                                     @else
+                                        @php
+                                            $remaining = max(0, 500000 - $subtotal);
+                                        @endphp
+                                        @if($remaining > 0)
                                         <small class="text-muted mb-2 d-block">
-                                            <i class="fas fa-info-circle"></i> Mua thêm {{ number_format(500000 - $total) }}₫ để được miễn phí vận chuyển
+                                            <i class="fas fa-info-circle"></i> Mua thêm {{ number_format($remaining) }}₫ để được miễn phí vận chuyển
                                         </small>
+                                        @endif
                                     @endif
                                     <hr>
                                     <div class="d-flex justify-content-between mb-3">
                                         <strong>Tổng cộng:</strong>
                                         <strong class="text-primary fs-5 final-total">
-                                            {{ number_format($total >= 500000 ? $total : $total + 30000) }}₫
+                                            {{ number_format($total) }}₫
                                         </strong>
                                     </div>
 
                                     <!-- Coupon Code -->
                                     <div class="coupon-section mb-3">
-                                        <div class="input-group">
-                                            <input type="text" class="form-control" placeholder="Mã giảm giá" id="couponCode">
-                                            <button class="btn btn-outline-primary" type="button" onclick="applyCoupon()">
-                                                Áp dụng
+                                        @if($coupon)
+                                        <div class="alert alert-success d-flex justify-content-between align-items-center p-2 mb-2">
+                                            <div>
+                                                <strong><i class="fas fa-tag"></i> {{ $coupon['code'] }}</strong>
+                                                @if(!empty($coupon['description']))
+                                                <div class="small text-muted">{{ $coupon['description'] }}</div>
+                                                @endif
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeCoupon()">
+                                                <i class="fas fa-times"></i> Xóa
                                             </button>
                                         </div>
+                                        @else
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" placeholder="Nhập mã giảm giá" id="couponCode">
+                                            <button class="btn btn-outline-primary btn-apply-coupon" type="button" onclick="applyCoupon()">
+                                                <i class="fas fa-tag"></i> Áp dụng
+                                            </button>
+                                        </div>
+                                        @endif
                                         <div id="couponMessage" class="mt-2"></div>
                                     </div>
 
@@ -346,18 +374,86 @@ function removeFromCart(id) {
     });
 }
 
-function applyCoupon() {
+async function applyCoupon() {
     const couponCode = document.getElementById('couponCode').value.trim();
     const messageDiv = document.getElementById('couponMessage');
+    const applyBtn = document.querySelector('.btn-apply-coupon');
     
     if (!couponCode) {
         messageDiv.innerHTML = '<small class="text-danger">Vui lòng nhập mã giảm giá</small>';
         return;
     }
 
-    // Here you would typically make an AJAX request to validate and apply the coupon
-    // For now, we'll show a placeholder message
-    messageDiv.innerHTML = '<small class="text-info">Chức năng mã giảm giá sẽ sớm được cập nhật</small>';
+    // Disable button và hiển thị loading
+    if (applyBtn) {
+        applyBtn.disabled = true;
+        applyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+    }
+    messageDiv.innerHTML = '<small class="text-info"><i class="fas fa-spinner fa-spin"></i> Đang kiểm tra mã...</small>';
+
+    try {
+        const response = await fetch('{{ route("coupons.apply") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ code: couponCode })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            messageDiv.innerHTML = '<small class="text-success"><i class="fas fa-check-circle"></i> ' + data.message + '</small>';
+            
+            // Reload trang để cập nhật giỏ hàng
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
+        } else {
+            messageDiv.innerHTML = '<small class="text-danger"><i class="fas fa-times-circle"></i> ' + data.message + '</small>';
+            if (applyBtn) {
+                applyBtn.disabled = false;
+                applyBtn.innerHTML = '<i class="fas fa-tag"></i> Áp dụng';
+            }
+        }
+    } catch (error) {
+        console.error('Apply coupon error:', error);
+        messageDiv.innerHTML = '<small class="text-danger"><i class="fas fa-exclamation-triangle"></i> Có lỗi xảy ra. Vui lòng thử lại.</small>';
+        if (applyBtn) {
+            applyBtn.disabled = false;
+            applyBtn.innerHTML = '<i class="fas fa-tag"></i> Áp dụng';
+        }
+    }
+}
+
+async function removeCoupon() {
+    if (!confirm('Bạn có chắc muốn xóa mã giảm giá?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch('{{ route("coupons.remove") }}', {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showToast('Thành công', data.message, 'success');
+            window.location.reload();
+        } else {
+            showToast('Lỗi', data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Remove coupon error:', error);
+        showToast('Lỗi', 'Có lỗi xảy ra khi xóa mã giảm giá', 'error');
+    }
 }
 
 // Check cart validity before checkout

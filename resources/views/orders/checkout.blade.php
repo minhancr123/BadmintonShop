@@ -229,35 +229,64 @@
 
                                 <!-- Order Totals -->
                                 <div class="order-totals">
+                                    @php
+                                        $shippingThreshold = 500000;
+                                        $remainingForFreeShipping = max(0, $shippingThreshold - $subtotal);
+                                    @endphp
+
+                                    @if($coupon)
+                                    <div class="alert alert-success d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <strong>Mã giảm giá: {{ $coupon['code'] }}</strong>
+                                            @if(!empty($coupon['description']))
+                                            <div class="small text-muted">{{ $coupon['description'] }}</div>
+                                            @endif
+                                        </div>
+                                        @if($discount > 0)
+                                        <span class="badge bg-success">-{{ number_format($discount) }}₫</span>
+                                        @endif
+                                    </div>
+                                    @endif
+
                                     <div class="d-flex justify-content-between mb-2">
                                         <span>Tạm tính:</span>
-                                        <span class="subtotal">{{ number_format($total) }}₫</span>
+                                        <span class="subtotal">{{ number_format($subtotal) }}₫</span>
                                     </div>
+
+                                    @if($discount > 0)
+                                    <div class="d-flex justify-content-between mb-2 text-success">
+                                        <span>Giảm giá{{ $coupon ? ' (' . $coupon['code'] . ')' : '' }}:</span>
+                                        <span>-{{ number_format($discount) }}₫</span>
+                                    </div>
+                                    @endif
+
                                     <div class="d-flex justify-content-between mb-2">
                                         <span>Phí vận chuyển:</span>
                                         <span class="shipping-fee">
-                                            @if($total >= 500000)
+                                            @if($shipping == 0)
                                             <span class="text-success">Miễn phí</span>
                                             @else
-                                            30,000₫
+                                            {{ number_format($shipping) }}₫
                                             @endif
                                         </span>
                                     </div>
-                                    @if($total >= 500000)
+
+                                    @if($shipping == 0)
                                     <small class="text-success mb-2 d-block">
                                         <i class="fas fa-check"></i> Miễn phí vận chuyển!
                                     </small>
                                     @else
                                     <small class="text-muted mb-2 d-block">
-                                        <i class="fas fa-info-circle"></i> Mua thêm
-                                        {{ number_format(500000 - $total) }}₫ để được miễn phí vận chuyển
+                                        <i class="fas fa-info-circle"></i> Mua thêm {{ number_format($remainingForFreeShipping) }}₫ để được miễn phí vận chuyển
                                     </small>
                                     @endif
+
                                     <hr>
+
                                     <div class="d-flex justify-content-between mb-3">
                                         <strong class="fs-5">Tổng cộng:</strong>
                                         <strong class="text-primary fs-4">
-                                            {{ number_format($total >= 500000 ? $total : $total + 30000) }}₫
+                                            {{ number_format($total) }}₫
                                         </strong>
                                     </div>
                                 </div>

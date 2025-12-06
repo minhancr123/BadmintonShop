@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -133,8 +134,10 @@ class ProductController extends Controller
         
         // Check if current user has reviewed this product
         $userReview = null;
+        $hasPurchased = false;
         if (auth()->check()) {
             $userReview = $product->reviews()->where('user_id', auth()->id())->first();
+            $hasPurchased = $this->userHasPurchased($product, auth()->id());
         }
         
         $relatedProducts = Product::where('category_id', $product->category_id)
@@ -143,7 +146,7 @@ class ProductController extends Controller
                                   ->limit(4)
                                   ->get();
 
-        return view('products.show', compact('product', 'relatedProducts', 'reviewStats', 'userReview'));
+        return view('products.show', compact('product', 'relatedProducts', 'reviewStats', 'userReview', 'hasPurchased'));
     }
 
     /**
@@ -397,5 +400,18 @@ class ProductController extends Controller
             'distribution' => $distribution,
             'percentages' => $percentages,
         ];
+    }
+
+    /**
+     * Check if user has purchased the product
+     */
+    private function userHasPurchased($product, $userId)
+    {
+        return Order::where('user_id', $userId)
+            ->where('status', 'delivered')
+            ->whereHas('orderItems', function ($query) use ($product) {
+                $query->where('product_id', $product->id);
+            })
+            ->exists();
     }
 }

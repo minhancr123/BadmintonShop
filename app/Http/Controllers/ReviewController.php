@@ -58,7 +58,10 @@ class ReviewController extends Controller
                 ->where('user_id', Auth::id())
                 ->first() : null;
 
-        return view('products.reviews', compact('product', 'reviews', 'reviewStats', 'userReview', 'rating', 'sortBy'));
+        // Check if user has purchased this product
+        $hasPurchased = Auth::check() ? $this->userHasPurchased($product, Auth::id()) : false;
+
+        return view('products.reviews', compact('product', 'reviews', 'reviewStats', 'userReview', 'rating', 'sortBy', 'hasPurchased'));
     }
 
     /**
@@ -83,6 +86,11 @@ class ReviewController extends Controller
 
         // Check if user has purchased this product
         $hasPurchased = $this->userHasPurchased($product, Auth::id());
+        
+        if (!$hasPurchased) {
+            return redirect()->route('products.show', $product->slug)
+                ->with('error', 'Bạn cần mua và nhận sản phẩm này trước khi đánh giá');
+        }
 
         return view('reviews.create', compact('product', 'hasPurchased'));
     }
@@ -106,6 +114,14 @@ class ReviewController extends Controller
                 ->with('error', 'Bạn đã đánh giá sản phẩm này rồi');
         }
 
+        // Check if user has purchased this product
+        $hasPurchased = $this->userHasPurchased($product, Auth::id());
+        
+        if (!$hasPurchased) {
+            return redirect()->route('products.show', $product->slug)
+                ->with('error', 'Bạn cần mua và nhận sản phẩm này trước khi đánh giá');
+        }
+
         $validator = Validator::make($request->all(), [
             'rating' => 'required|integer|min:1|max:5',
             'title' => 'nullable|string|max:255',
@@ -124,9 +140,6 @@ class ReviewController extends Controller
             return back()->withErrors($validator)->withInput();
         }
 
-        // Check if user has purchased this product
-        $hasPurchased = $this->userHasPurchased($product, Auth::id());
-
         // Filter out empty pros and cons
         $pros = array_filter($request->pros ?? [], function($item) {
             return !empty(trim($item));
@@ -144,7 +157,7 @@ class ReviewController extends Controller
             'comment' => $request->comment,
             'pros' => array_values($pros), // Re-index array
             'cons' => array_values($cons), // Re-index array
-            'is_verified_purchase' => $hasPurchased,
+            'is_verified_purchase' => true, // Always true since we check before
             'is_approved' => true, // Auto-approve for now
         ]);
 

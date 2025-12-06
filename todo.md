@@ -1,0 +1,6 @@
+- [ ] Audit hiện trạng mã giảm giá
+- [ ] Thiết kế schema coupon và migration
+- [ ] Cập nhật model/quan hệ liên quan
+- [ ] Bổ sung logic áp dụng mã trong Cart/Checkout
+- [ ] Cập nhật giao diện/validation cho mã giảm giá
+- [ ] Viết tài liệu/test case cho mã giảm giá

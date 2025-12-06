@@ -98,10 +98,16 @@
                                 {{ $sortBy == 'rating_low' ? 'selected' : '' }}>Đánh giá thấp</option>
                     </select>
                     
-                    @if(auth()->check())
-                        <a href="{{ route('reviews.create', $product) }}" class="btn btn-primary">
-                            <i class="fas fa-star"></i> Viết đánh giá
-                        </a>
+                    @if(auth()->check() && !$userReview)
+                        @if($hasPurchased)
+                            <a href="{{ route('reviews.create', $product) }}" class="btn btn-primary">
+                                <i class="fas fa-star"></i> Viết đánh giá
+                            </a>
+                        @else
+                            <button class="btn btn-secondary" disabled title="Bạn cần mua sản phẩm này trước khi đánh giá">
+                                <i class="fas fa-star"></i> Viết đánh giá
+                            </button>
+                        @endif
                     @endif
                 </div>
             </div>
@@ -195,9 +201,14 @@
                             Hãy là người đầu tiên đánh giá sản phẩm này!
                         @endif
                     </p>
-                    @if(auth()->check())
-                        <a href="{{ route('reviews.create', $product) }}" class="btn btn-primary">Viết đánh giá</a>
-                    @else
+                    @if(auth()->check() && !$userReview)
+                        @if($hasPurchased)
+                            <a href="{{ route('reviews.create', $product) }}" class="btn btn-primary">Viết đánh giá</a>
+                        @else
+                            <button class="btn btn-secondary" disabled title="Bạn cần mua sản phẩm này trước khi đánh giá">Viết đánh giá</button>
+                            <p class="text-muted mt-2"><small>Bạn cần mua và nhận sản phẩm này để đánh giá</small></p>
+                        @endif
+                    @elseif(!auth()->check())
                         <a href="{{ route('login') }}" class="btn btn-primary">Đăng nhập để viết đánh giá</a>
                     @endif
                 </div>

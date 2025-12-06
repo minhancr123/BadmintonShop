@@ -5,6 +5,45 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property int $product_id
+ * @property int $user_id
+ * @property int $rating
+ * @property string|null $title
+ * @property string|null $comment
+ * @property array|null $pros
+ * @property array|null $cons
+ * @property bool $is_verified_purchase
+ * @property bool $is_approved
+ * @property int $helpful_count
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read mixed $age
+ * @property-read mixed $stars
+ * @property-read \App\Models\Product $product
+ * @property-read \App\Models\User $user
+ * @method static \Illuminate\Database\Eloquent\Builder|Review approved()
+ * @method static \Illuminate\Database\Eloquent\Builder|Review newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|Review newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|Review query()
+ * @method static \Illuminate\Database\Eloquent\Builder|Review rating($rating)
+ * @method static \Illuminate\Database\Eloquent\Builder|Review verifiedPurchase()
+ * @method static \Illuminate\Database\Eloquent\Builder|Review whereComment($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Review whereCons($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Review whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Review whereHelpfulCount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Review whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Review whereIsApproved($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Review whereIsVerifiedPurchase($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Review whereProductId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Review wherePros($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Review whereRating($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Review whereTitle($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Review whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Review whereUserId($value)
+ * @mixin \Eloquent
+ */
 class Review extends Model
 {
     use HasFactory;
