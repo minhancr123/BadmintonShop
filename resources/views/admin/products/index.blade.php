@@ -164,6 +164,19 @@
                                            class="btn btn-outline-info" target="_blank" title="Xem">
                                             <i class="fas fa-eye"></i>
                                         </a>
+                                        @if($product->is_active)
+                                            <button class="btn btn-outline-warning" 
+                                                    onclick="toggleStatus({{ $product->id }}, 'deactivate')" 
+                                                    title="Vô hiệu hóa">
+                                                <i class="fas fa-pause"></i>
+                                            </button>
+                                        @else
+                                            <button class="btn btn-outline-success" 
+                                                    onclick="toggleStatus({{ $product->id }}, 'activate')" 
+                                                    title="Kích hoạt">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        @endif
                                         <button class="btn btn-outline-danger" 
                                                 onclick="deleteProduct({{ $product->id }})" title="Xóa">
                                             <i class="fas fa-trash"></i>
@@ -284,17 +297,17 @@
         const confirmed = await window.showConfirm(title, message, btnText, iconClass, btnClass);
         
         if (confirmed) {
-            const formData = new FormData();
-            formData.append('action', action);
-            formData.append('products', JSON.stringify(selectedProducts));
-
             fetch('{{ route("admin.products.bulk-action") }}', {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
-                body: formData
+                body: JSON.stringify({
+                    action: action,
+                    products: selectedProducts
+                })
             })
             .then(response => response.json())
             .then(data => {
@@ -303,6 +316,49 @@
                     setTimeout(() => location.reload(), 1000);
                 } else {
                     window.showToast('Lỗi', data.message || 'Có lỗi xảy ra khi thực hiện thao tác', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                window.showToast('Lỗi', 'Có lỗi xảy ra khi thực hiện thao tác', 'error');
+            });
+        }
+    }
+    
+    // Toggle Single Product Status
+    async function toggleStatus(productId, action) {
+        const actionText = action === 'activate' ? 'kích hoạt' : 'vô hiệu hóa';
+        const iconClass = action === 'activate' ? 'fas fa-check text-success' : 'fas fa-pause text-warning';
+        const btnClass = action === 'activate' ? 'btn-success' : 'btn-warning';
+        
+        const confirmed = await window.showConfirm(
+            action === 'activate' ? 'Kích hoạt sản phẩm' : 'Vô hiệu hóa sản phẩm',
+            `Bạn có chắc muốn ${actionText} sản phẩm này?`,
+            action === 'activate' ? 'Kích hoạt' : 'Vô hiệu hóa',
+            iconClass,
+            btnClass
+        );
+        
+        if (confirmed) {
+            fetch('{{ route("admin.products.bulk-action") }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: action,
+                    products: [productId]
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.showToast('Thành công', data.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    window.showToast('Lỗi', data.message || 'Có lỗi xảy ra', 'error');
                 }
             })
             .catch(error => {

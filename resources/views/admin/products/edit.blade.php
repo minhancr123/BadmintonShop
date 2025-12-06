@@ -22,7 +22,7 @@
     <div class="card-body">
         <form action="{{ route('admin.products.update', $product) }}" method="POST" enctype="multipart/form-data">
             @csrf
-            @method('PUT')
+            {{-- @method('PUT') --}}
             
             <div class="row">
                 <!-- Left Column -->

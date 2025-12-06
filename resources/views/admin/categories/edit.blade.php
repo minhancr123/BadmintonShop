@@ -24,7 +24,7 @@
             <div class="card-body">
                 <form action="{{ route('admin.categories.update', $category) }}" method="POST" enctype="multipart/form-data">
                     @csrf
-                    @method('PUT')
+                    {{-- @method('PUT') --}}
                     
                     <div class="mb-3">
                         <label for="name" class="form-label">Tên danh mục <span class="text-danger">*</span></label>

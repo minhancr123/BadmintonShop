@@ -1,10 +1,10 @@
 @extends('admin.layout')
 
-@section('title', 'Dashboard')
-@section('page-title', 'Dashboard')
+@section('title', 'Bảng điều khiển')
+@section('page-title', 'Bảng điều khiển')
 
 @section('breadcrumb')
-    <li class="breadcrumb-item active">Dashboard</li>
+    <li class="breadcrumb-item active">Bảng điều khiển</li>
 @endsection
 
 @section('content')

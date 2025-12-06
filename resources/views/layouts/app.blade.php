@@ -17,6 +17,41 @@
         .product-card { transition: transform 0.3s; }
         .product-card:hover { transform: translateY(-5px); box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
         .badge-sale { position: absolute; top: 10px; right: 10px; }
+        
+        /* Custom Pagination Styles */
+        .pagination {
+            margin: 30px 0;
+        }
+        .pagination .page-link {
+            color: #28a745;
+            border: 1px solid #dee2e6;
+            padding: 10px 16px;
+            margin: 0 3px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        .pagination .page-link:hover {
+            color: #fff;
+            background-color: #28a745;
+            border-color: #28a745;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+        }
+        .pagination .page-item.active .page-link {
+            background-color: #28a745;
+            border-color: #28a745;
+            color: white;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+        }
+        .pagination .page-item.disabled .page-link {
+            color: #6c757d;
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+        }
+        .pagination .page-link i {
+            font-size: 14px;
+        }
     </style>
     
     @stack('styles')
@@ -71,11 +106,11 @@
                                 {{ Auth::user()->name }}
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{{ route('dashboard') }}">Dashboard</a></li>
+                                <li><a class="dropdown-item" href="{{ route('dashboard') }}">Bảng điều khiển</a></li>
                                 <li><a class="dropdown-item" href="{{ route('orders.index') }}">Đơn hàng của tôi</a></li>
                                 @if(Auth::user()->isAdmin())
                                     <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="{{ route('admin.dashboard') }}">Admin Panel</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.dashboard') }}">Trang quản trị</a></li>
                                 @endif
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
@@ -139,7 +174,7 @@
             </div>
             <hr class="bg-white">
             <div class="text-center">
-                <p>&copy; 2024 Badminton Shop. All rights reserved.</p>
+                <p>&copy; 2024 Badminton Shop. Bảo lưu mọi quyền.</p>
             </div>
         </div>
     </footer>

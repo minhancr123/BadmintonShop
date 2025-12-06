@@ -127,6 +127,19 @@
                                            class="btn btn-outline-info" target="_blank" title="Xem">
                                             <i class="fas fa-eye"></i>
                                         </a>
+                                        @if($category->is_active)
+                                            <button class="btn btn-outline-warning" 
+                                                    onclick="toggleStatus({{ $category->id }}, 'deactivate')" 
+                                                    title="Vô hiệu hóa">
+                                                <i class="fas fa-pause"></i>
+                                            </button>
+                                        @else
+                                            <button class="btn btn-outline-success" 
+                                                    onclick="toggleStatus({{ $category->id }}, 'activate')" 
+                                                    title="Kích hoạt">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        @endif
                                         @if($category->products_count == 0)
                                             <button class="btn btn-outline-danger" 
                                                     onclick="deleteCategory({{ $category->id }})" title="Xóa">
@@ -250,17 +263,17 @@
         const confirmed = await window.showConfirm(title, message, btnText, iconClass, btnClass);
 
         if (confirmed) {
-            const formData = new FormData();
-            formData.append('action', action);
-            formData.append('categories', JSON.stringify(selectedCategories));
-
             fetch('{{ route("admin.categories.bulk-action") }}', {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
-                body: formData
+                body: JSON.stringify({
+                    action: action,
+                    categories: selectedCategories
+                })
             })
             .then(response => response.json())
             .then(data => {
@@ -269,6 +282,49 @@
                     setTimeout(() => location.reload(), 1000);
                 } else {
                     window.showToast('Lỗi', data.message || 'Có lỗi xảy ra khi thực hiện thao tác', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                window.showToast('Lỗi', 'Có lỗi xảy ra khi thực hiện thao tác', 'error');
+            });
+        }
+    }
+    
+    // Toggle Single Category Status
+    async function toggleStatus(categoryId, action) {
+        const actionText = action === 'activate' ? 'kích hoạt' : 'vô hiệu hóa';
+        const iconClass = action === 'activate' ? 'fas fa-check text-success' : 'fas fa-pause text-warning';
+        const btnClass = action === 'activate' ? 'btn-success' : 'btn-warning';
+        
+        const confirmed = await window.showConfirm(
+            action === 'activate' ? 'Kích hoạt danh mục' : 'Vô hiệu hóa danh mục',
+            `Bạn có chắc muốn ${actionText} danh mục này?`,
+            action === 'activate' ? 'Kích hoạt' : 'Vô hiệu hóa',
+            iconClass,
+            btnClass
+        );
+        
+        if (confirmed) {
+            fetch('{{ route("admin.categories.bulk-action") }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: action,
+                    categories: [categoryId]
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.showToast('Thành công', data.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    window.showToast('Lỗi', data.message || 'Có lỗi xảy ra', 'error');
                 }
             })
             .catch(error => {

@@ -112,7 +112,7 @@
                     @if($product->is_on_sale)
                     <div class="sale-badge position-absolute top-0 end-0 bg-danger text-white px-3 py-1 rounded-start">
                         <i class="fas fa-fire me-1"></i>
-                        -{{ $product->discount_percentage }}% OFF
+                        Giảm {{ $product->discount_percentage }}%
                     </div>
                     @endif
                     
@@ -253,7 +253,7 @@
                         <div class="sale-overlay position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-25 d-flex align-items-center justify-content-center">
                             <div class="sale-badge bg-danger text-white px-3 py-2 rounded-pill shadow">
                                 <i class="fas fa-bolt me-1"></i>
-                                -{{ $product->discount_percentage }}% OFF
+                                Giảm {{ $product->discount_percentage }}%
                             </div>
                         </div>
                     </div>

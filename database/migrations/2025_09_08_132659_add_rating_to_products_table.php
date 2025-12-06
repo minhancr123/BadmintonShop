@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('products', function (Blueprint $table) {
-            $table->decimal('average_rating', 3, 2)->default(0)->after('views');
-            $table->integer('reviews_count')->default(0)->after('average_rating');
+            $table->decimal('average_rating', 3, 2)->default(0);
+            $table->integer('reviews_count')->default(0);
         });
     }
 

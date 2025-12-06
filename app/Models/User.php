@@ -63,6 +63,7 @@ class User extends Authenticatable
         'role',
         'phone',
         'address',
+        'is_blocked',
     ];
 
     /**
@@ -83,6 +84,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'is_blocked' => 'boolean',
     ];
 
     /**

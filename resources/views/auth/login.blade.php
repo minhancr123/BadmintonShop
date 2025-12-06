@@ -86,12 +86,11 @@
                 <div class="card-body text-center">
                     <p class="text-muted mb-3">Hoặc đăng nhập bằng</p>
                     <div class="d-grid gap-2">
-                        <button class="btn btn-outline-primary" disabled>
-                            <i class="fab fa-facebook"></i> Facebook (Sắp có)
-                        </button>
-                        <button class="btn btn-outline-danger" disabled>
-                            <i class="fab fa-google"></i> Google (Sắp có)
-                        </button>
+                        <!-- <button class="btn btn-outline-primary" > -->
+                            <a href="{{route('auth.google')}}" class="btn btn-danger mt-3">
+                                <i class="fab fa-google"></i> Google
+                                {{-- Thông báo lỗi Google nếu có --}}
+                            </a>
                     </div>
                 </div>
             </div>

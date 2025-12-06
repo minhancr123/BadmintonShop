@@ -26,7 +26,15 @@
                     <option value="user" @selected(request('role') == 'user')>Khách hàng</option>
                 </select>
             </div>
-            <div class="col-md-5 d-flex align-items-end">
+            <div class="col-md-2">
+                <label class="form-label">Trạng thái</label>
+                <select class="form-select" name="status">
+                    <option value="">Tất cả</option>
+                    <option value="active" @selected(request('status') == 'active')>Đang hoạt động</option>
+                    <option value="blocked" @selected(request('status') == 'blocked')>Đã khóa</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary me-2">
                     <i class="fas fa-search"></i> Lọc
                 </button>
@@ -55,10 +63,11 @@
                             <th>Email</th>
                             <th>Điện thoại</th>
                             <th>Vai trò</th>
+                            <th>Trạng thái</th>
                             <th>Đơn hàng</th>
                             <th>Tổng chi tiêu</th>
                             <th>Ngày đăng ký</th>
-                            <th width="100">Thao tác</th>
+                            <th width="150">Thao tác</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -106,6 +115,17 @@
                                     @endif
                                 </td>
                                 <td>
+                                    @if($user->is_blocked)
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-ban"></i> Đã khóa
+                                        </span>
+                                    @else
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check-circle"></i> Hoạt động
+                                        </span>
+                                    @endif
+                                </td>
+                                <td>
                                     <div class="text-center">
                                         <span class="fw-bold text-primary">{{ $user->orders->count() }}</span>
                                         <br><small class="text-muted">đơn hàng</small>
@@ -130,6 +150,7 @@
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         @if($user->id !== auth()->id())
+                                            <!-- Dropdown for role change -->
                                             <div class="dropdown">
                                                 <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
                                                         data-bs-toggle="dropdown" title="Thay đổi vai trò">
@@ -147,6 +168,31 @@
                                                     @endif
                                                 </ul>
                                             </div>
+                                            
+                                            <!-- Block/Unblock button -->
+                                            @if($user->is_blocked)
+                                                <button type="button" class="btn btn-outline-success unblock-btn" 
+                                                        data-user-id="{{ $user->id }}" 
+                                                        data-user-name="{{ $user->name }}"
+                                                        title="Mở khóa tài khoản">
+                                                    <i class="fas fa-unlock"></i>
+                                                </button>
+                                            @else
+                                                <button type="button" class="btn btn-outline-danger block-btn" 
+                                                        data-user-id="{{ $user->id }}" 
+                                                        data-user-name="{{ $user->name }}"
+                                                        title="Khóa tài khoản">
+                                                    <i class="fas fa-ban"></i>
+                                                </button>
+                                            @endif
+                                            
+                                            <!-- Reset password button -->
+                                            <button type="button" class="btn btn-outline-warning reset-password-btn" 
+                                                    data-user-id="{{ $user->id }}" 
+                                                    data-user-name="{{ $user->name }}"
+                                                    title="Đặt lại mật khẩu">
+                                                <i class="fas fa-key"></i>
+                                            </button>
                                         @endif
                                     </div>
                                 </td>
@@ -206,6 +252,36 @@
                 const role = this.getAttribute('data-role');
                 console.log('Role change button clicked:', userId, role);
                 updateRole(userId, role);
+            });
+        });
+        
+        // Add event listeners for block buttons
+        document.querySelectorAll('.block-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const userId = this.getAttribute('data-user-id');
+                const userName = this.getAttribute('data-user-name');
+                blockUser(userId, userName);
+            });
+        });
+        
+        // Add event listeners for unblock buttons
+        document.querySelectorAll('.unblock-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const userId = this.getAttribute('data-user-id');
+                const userName = this.getAttribute('data-user-name');
+                unblockUser(userId, userName);
+            });
+        });
+        
+        // Add event listeners for reset password buttons
+        document.querySelectorAll('.reset-password-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const userId = this.getAttribute('data-user-id');
+                const userName = this.getAttribute('data-user-name');
+                resetPassword(userId, userName);
             });
         });
     });
@@ -286,6 +362,116 @@
         } catch (error) {
             console.error('Error in updateRole:', error);
             alert('Lỗi: ' + error.message);
+        }
+    }
+    
+    // Block user function
+    async function blockUser(userId, userName) {
+        try {
+            const confirmed = await showConfirm(
+                'Khóa tài khoản',
+                `Bạn có chắc muốn khóa tài khoản của "${userName}"? Người dùng sẽ không thể đăng nhập.`,
+                'Khóa tài khoản',
+                'fas fa-ban text-danger',
+                'btn-danger'
+            );
+            
+            if (confirmed) {
+                const url = `{{ route('admin.users.block', '__USER_ID__') }}`.replace('__USER_ID__', userId);
+                
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    showToast('Thành công', 'Đã khóa tài khoản người dùng!', 'success');
+                    setTimeout(() => location.reload(), 1000);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('Lỗi', 'Có lỗi xảy ra khi khóa tài khoản', 'error');
+                });
+            }
+        } catch (error) {
+            console.error('Error in blockUser:', error);
+        }
+    }
+    
+    // Unblock user function
+    async function unblockUser(userId, userName) {
+        try {
+            const confirmed = await showConfirm(
+                'Mở khóa tài khoản',
+                `Bạn có chắc muốn mở khóa tài khoản của "${userName}"?`,
+                'Mở khóa',
+                'fas fa-unlock text-success',
+                'btn-success'
+            );
+            
+            if (confirmed) {
+                const url = `{{ route('admin.users.unblock', '__USER_ID__') }}`.replace('__USER_ID__', userId);
+                
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    showToast('Thành công', 'Đã mở khóa tài khoản người dùng!', 'success');
+                    setTimeout(() => location.reload(), 1000);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('Lỗi', 'Có lỗi xảy ra khi mở khóa tài khoản', 'error');
+                });
+            }
+        } catch (error) {
+            console.error('Error in unblockUser:', error);
+        }
+    }
+    
+    // Reset password function
+    async function resetPassword(userId, userName) {
+        try {
+            const confirmed = await showConfirm(
+                'Đặt lại mật khẩu',
+                `Bạn có chắc muốn đặt lại mật khẩu cho "${userName}"? Mật khẩu mới sẽ là: <strong>123</strong>`,
+                'Đặt lại',
+                'fas fa-key text-warning',
+                'btn-warning'
+            );
+            
+            if (confirmed) {
+                const url = `{{ route('admin.users.reset-password', '__USER_ID__') }}`.replace('__USER_ID__', userId);
+                
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    showToast('Thành công', 'Mật khẩu đã được đặt lại thành: 123', 'success');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('Lỗi', 'Có lỗi xảy ra khi đặt lại mật khẩu', 'error');
+                });
+            }
+        } catch (error) {
+            console.error('Error in resetPassword:', error);
         }
     }
 </script>

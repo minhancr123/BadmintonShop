@@ -43,6 +43,7 @@ class LoginController extends Controller
 
         // Check if user is blocked
         $user = Auth::user();
+        
         if ($user && $user->is_blocked) {
             Auth::logout();
             return redirect()->back()

@@ -23,43 +23,54 @@
             <div class="col-lg-4 col-md-6">
                 <div class="card category-card h-100 border-0 shadow-sm overflow-hidden">
                     <!-- Card Header with Gradient -->
-                    <div class="card-header-gradient text-center py-4">
-                        <!-- Category Icon -->
-                        <div class="category-icon mb-3">
-                            @php
-                                $iconClass = 'fas fa-tag'; // Default icon
-                                $iconColor = 'text-white';
-                                $bgGradient = 'bg-primary';
-                                
-                                // Set specific icons and colors based on category name
-                                $categoryName = strtolower($category->name);
-                                if (str_contains($categoryName, 'Vợt') || str_contains($categoryName, 'racket')) {
-                                    $iconClass = 'fas fa-table-tennis';
-                                    $bgGradient = 'bg-gradient-danger';
-                                } elseif (str_contains($categoryName, 'giày') || str_contains($categoryName, 'shoes')) {
-                                    $iconClass = 'fas fa-shoe-prints';
-                                    $bgGradient = 'bg-gradient-success';
-                                } elseif (str_contains($categoryName, 'áo') || str_contains($categoryName, 'shirt') || str_contains($categoryName, 'clothing')) {
-                                    $iconClass = 'fas fa-tshirt';
-                                    $bgGradient = 'bg-gradient-info';
-                                } elseif (str_contains($categoryName, 'Túi') || str_contains($categoryName, 'balo') || str_contains($categoryName, 'bag')) {
-                                    $iconClass = 'fas fa-bag-shopping';
-                                    $bgGradient = 'bg-gradient-warning';
-                                } elseif (str_contains($categoryName, 'phụ kiện') || str_contains($categoryName, 'accessories')) {
-                                    $iconClass = 'fas fa-tools';
-                                    $bgGradient = 'bg-gradient-secondary';
-                                } elseif (str_contains($categoryName, 'cầu') || str_contains($categoryName, 'shuttlecock')) {
-                                    $iconClass = 'fas fa-feather';
-                                    $bgGradient = 'bg-gradient-success';
-                                }
-                            @endphp
-                            <div class="icon-circle {{ $bgGradient }} mx-auto d-flex align-items-center justify-content-center">
-                                <i class="{{ $iconClass }} {{ $iconColor }}" style="font-size: 2.5rem;"></i>
+                    <div class="card-header-gradient text-center py-4 position-relative" 
+                        @if($category->image) 
+                            style="background-image: url('{{ asset('storage/' . $category->image) }}'); background-size: cover; background-position: center; min-height: 200px;" 
+                        @endif>
+                        
+                        @if($category->image)
+                            <div class="position-absolute top-0 start-0 w-100 h-100" style="background: rgba(0,0,0,0.4);"></div>
+                            <div class="position-relative z-1 h-100 d-flex flex-column justify-content-center align-items-center" style="min-height: 150px;">
+                                <h4 class="card-title mb-0 text-white fw-bold" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.6); font-size: 1.5rem;">{{ $category->name }}</h4>
                             </div>
-                        </div>
+                        @else
+                            <!-- Category Icon -->
+                            <div class="category-icon mb-3">
+                                @php
+                                    $iconClass = 'fas fa-tag'; // Default icon
+                                    $iconColor = 'text-white';
+                                    $bgGradient = 'bg-primary';
+                                    
+                                    // Set specific icons and colors based on category name
+                                    $categoryName = strtolower($category->name);
+                                    if (str_contains($categoryName, 'vợt') || str_contains($categoryName, 'racket')) {
+                                        $iconClass = 'fas fa-table-tennis';
+                                        $bgGradient = 'bg-gradient-danger';
+                                    } elseif (str_contains($categoryName, 'giày') || str_contains($categoryName, 'shoes')) {
+                                        $iconClass = 'fas fa-shoe-prints';
+                                        $bgGradient = 'bg-gradient-success';
+                                    } elseif (str_contains($categoryName, 'áo') || str_contains($categoryName, 'shirt') || str_contains($categoryName, 'clothing')) {
+                                        $iconClass = 'fas fa-tshirt';
+                                        $bgGradient = 'bg-gradient-info';
+                                    } elseif (str_contains($categoryName, 'túi') || str_contains($categoryName, 'balo') || str_contains($categoryName, 'bag')) {
+                                        $iconClass = 'fas fa-bag-shopping';
+                                        $bgGradient = 'bg-gradient-warning';
+                                    } elseif (str_contains($categoryName, 'phụ kiện') || str_contains($categoryName, 'accessories')) {
+                                        $iconClass = 'fas fa-tools';
+                                        $bgGradient = 'bg-gradient-secondary';
+                                    } elseif (str_contains($categoryName, 'cầu') || str_contains($categoryName, 'shuttlecock')) {
+                                        $iconClass = 'fas fa-feather';
+                                        $bgGradient = 'bg-gradient-success';
+                                    }
+                                @endphp
+                                <div class="icon-circle {{ $bgGradient }} mx-auto d-flex align-items-center justify-content-center">
+                                    <i class="{{ $iconClass }} {{ $iconColor }}" style="font-size: 2.5rem;"></i>
+                                </div>
+                            </div>
 
-                        <!-- Category Title -->
-                        <h4 class="card-title mb-0 text-white fw-bold">{{ $category->name }}</h4>
+                            <!-- Category Title -->
+                            <h4 class="card-title mb-0 text-white fw-bold">{{ $category->name }}</h4>
+                        @endif
                     </div>
                     <!-- Card Body -->
                     <div class="card-body p-4">

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Admin Panel') - {{ config('app.name') }}</title>
+    <title>@yield('title', 'Trang quản trị') - {{ config('app.name') }}</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     
     <!-- Bootstrap CSS -->
@@ -157,6 +157,32 @@
                 display: block;
             }
         }
+        /* Pagination styling for admin */
+        .pagination {
+            margin: 24px 0;
+        }
+        .pagination .page-link {
+            color: #4a69bd;
+            border: 1px solid #e9ecef;
+            padding: 8px 12px;
+            margin: 0 4px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+        .pagination .page-link:hover {
+            color: #fff;
+            background-color: #4a69bd;
+            border-color: #4a69bd;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(74,105,189,0.15);
+        }
+        .pagination .page-item.active .page-link {
+            background-color: #4a69bd;
+            border-color: #4a69bd;
+            color: white;
+            box-shadow: 0 6px 16px rgba(74,105,189,0.18);
+        }
     </style>
 </head>
 <body>
@@ -171,7 +197,7 @@
                     <!-- Brand -->
                     <div class="text-center mb-4">
                         <a href="{{ route('admin.dashboard') }}" class="brand-logo text-decoration-none">
-                            <i class="fas fa-badminton"></i> Admin Panel
+                            <i class="fas fa-badminton"></i> Trang quản trị
                         </a>
                         <div class="user-info mt-2">
                             <i class="fas fa-user-circle"></i> {{ auth()->user()->name }}
@@ -182,7 +208,7 @@
                     <ul class="nav flex-column">
                         <li class="nav-item">
                             <a class="nav-link @if(request()->routeIs('admin.dashboard')) active @endif" href="{{ route('admin.dashboard') }}">
-                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                                <i class="fas fa-tachometer-alt"></i> Bảng điều khiển
                             </a>
                         </li>
                         <li class="nav-item">
@@ -275,7 +301,7 @@
                 <div class="page-header">
                     <div class="row align-items-center">
                         <div class="col">
-                            <h1 class="h2 mb-0">@yield('page-title', 'Admin Panel')</h1>
+                            <h1 class="h2 mb-0">@yield('page-title', 'Trang quản trị')</h1>
                             @if(View::hasSection('breadcrumb'))
                                 <nav aria-label="breadcrumb">
                                     <ol class="breadcrumb mt-2 mb-0">

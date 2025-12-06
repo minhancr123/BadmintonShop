@@ -256,6 +256,15 @@ class AdminController extends Controller
         if ($request->has('role') && $request->role != '') {
             $query->where('role', $request->role);
         }
+        
+        // Filter by status (blocked/active)
+        if ($request->has('status') && $request->status != '') {
+            if ($request->status == 'blocked') {
+                $query->where('is_blocked', true);
+            } elseif ($request->status == 'active') {
+                $query->where('is_blocked', false);
+            }
+        }
 
         $users = $query->orderBy('created_at', 'desc')->paginate(15);
 
@@ -404,6 +413,13 @@ public function blockUser($id)
     $user->is_blocked = true;
     $user->save();
 
+    if (request()->expectsJson()) {
+        return response()->json([
+            'success' => true,
+            'message' => 'Đã tạm khóa tài khoản người dùng.'
+        ]);
+    }
+
     return redirect()->back()->with('success', 'Đã tạm khóa tài khoản người dùng.');
 }
 
@@ -412,6 +428,13 @@ public function unblockUser($id)
     $user = User::findOrFail($id);
     $user->is_blocked = false;
     $user->save();
+
+    if (request()->expectsJson()) {
+        return response()->json([
+            'success' => true,
+            'message' => 'Đã mở khóa tài khoản người dùng.'
+        ]);
+    }
 
     return redirect()->back()->with('success', 'Đã mở khóa tài khoản người dùng.');
 }
@@ -422,6 +445,13 @@ public function resetPassword(Request $request, $id)
     $newPassword = '123'; // mật khẩu mặc định 
     $user->password = Hash::make($newPassword);
     $user->save();
+
+    if ($request->expectsJson()) {
+        return response()->json([
+            'success' => true,
+            'message' => 'Đặt lại mật khẩu thành công. Mật khẩu mới: ' . $newPassword
+        ]);
+    }
 
     return back()->with('success', 'Đặt lại mật khẩu thành công. Mật khẩu mới: ' . $newPassword);
 }
