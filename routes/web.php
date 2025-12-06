@@ -7,6 +7,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\ChangePasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\PaymentController;
@@ -21,6 +22,10 @@ use App\Http\Controllers\CouponController;
 
 // Home page
 Route::get('/', [HomeController::class, 'index'])->name('home');
+// Change password
+Route::middleware(['auth'])->group(function () {
+    Route::post('/change-password', [ChangePasswordController::class, 'update'])->name('password.change');
+});
 
 // Additional pages
 Route::get('/search', [HomeController::class, 'search'])->name('search');
@@ -136,4 +141,17 @@ Route::group(['prefix' => 'products/{product}'], function () {
 
 Route::group(['prefix' => 'reviews', 'middleware' => 'auth'], function () {
     Route::post('/{review}/helpful', [ReviewController::class, 'helpful'])->name('reviews.helpful');
+});
+// blockUser() và unblockUser():
+// Route::middleware(['auth', 'admin'])->group(function () {
+//     Route::post('/admin/users/{id}/block', [AdminController::class, 'blockUser'])->name('admin.users.block');
+//     Route::post('/admin/users/{id}/unblock', [AdminController::class, 'unblockUser'])->name('admin.users.unblock');
+//     Route::post('/admin/users/{id}/reset-password', [AdminController::class, 'resetPassword'])->name('admin.users.reset-password');
+
+// });
+// Block and unblock user
+Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
+    Route::post('users/{id}/block', [AdminController::class, 'blockUser'])->name('users.block');
+    Route::post('users/{id}/unblock', [AdminController::class, 'unblockUser'])->name('users.unblock');
+    Route::post('users/{id}/reset-password', [AdminController::class, 'resetPassword'])->name('users.reset-password');
 });

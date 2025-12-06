@@ -1,18 +1,18 @@
-@extends('layouts.app')
 
-@section('title', 'Tài khoản của tôi - Badminton Shop')
 
-@section('content')
+<?php $__env->startSection('title', 'Tài khoản của tôi - Badminton Shop'); ?>
+
+<?php $__env->startSection('content'); ?>
 <div class="container">
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h1>Xin chào, {{ Auth::user()->name }}!</h1>
+                    <h1>Xin chào, <?php echo e(Auth::user()->name); ?>!</h1>
                     <p class="text-muted">Quản lý tài khoản và theo dõi đơn hàng của bạn</p>
                 </div>
                 <div>
-                    <small class="text-muted">Đăng nhập lần cuối: {{ Auth::user()->updated_at->diffForHumans() }}</small>
+                    <small class="text-muted">Đăng nhập lần cuối: <?php echo e(Auth::user()->updated_at->diffForHumans()); ?></small>
                 </div>
             </div>
         </div>
@@ -28,17 +28,18 @@
                 <div class="card-body">
                     <div class="text-center mb-3">
                         <div class="avatar-circle bg-primary text-white d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 80px; height: 80px; font-size: 2rem;">
-                            {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                            <?php echo e(strtoupper(substr(Auth::user()->name, 0, 1))); ?>
+
                         </div>
                     </div>
                     <div class="user-info">
-                        <p class="mb-2"><strong>Tên:</strong> {{ Auth::user()->name }}</p>
-                        <p class="mb-2"><strong>Email:</strong> {{ Auth::user()->email }}</p>
-                        <p class="mb-2"><strong>Điện thoại:</strong> {{ Auth::user()->phone ?? 'Chưa cập nhật' }}</p>
-                        <p class="mb-2"><strong>Địa chỉ:</strong> {{ Auth::user()->address ?? 'Chưa cập nhật' }}</p>
+                        <p class="mb-2"><strong>Tên:</strong> <?php echo e(Auth::user()->name); ?></p>
+                        <p class="mb-2"><strong>Email:</strong> <?php echo e(Auth::user()->email); ?></p>
+                        <p class="mb-2"><strong>Điện thoại:</strong> <?php echo e(Auth::user()->phone ?? 'Chưa cập nhật'); ?></p>
+                        <p class="mb-2"><strong>Địa chỉ:</strong> <?php echo e(Auth::user()->address ?? 'Chưa cập nhật'); ?></p>
                         <p class="mb-0">
                             <strong>Trạng thái:</strong> 
-                            <span class="badge bg-success">{{ ucfirst(Auth::user()->role) }}</span>
+                            <span class="badge bg-success"><?php echo e(ucfirst(Auth::user()->role)); ?></span>
                         </p>
                     </div>
                     <div class="mt-3">
@@ -59,25 +60,25 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6 col-xl-3 mb-3">
-                            <a href="{{ route('products.index') }}" class="btn btn-outline-primary w-100 p-3 text-decoration-none">
+                            <a href="<?php echo e(route('products.index')); ?>" class="btn btn-outline-primary w-100 p-3 text-decoration-none">
                                 <i class="fas fa-shopping-bag fa-2x mb-2"></i>
                                 <div>Mua sắm</div>
                             </a>
                         </div>
                         <div class="col-md-6 col-xl-3 mb-3">
-                            <a href="{{ route('cart.index') }}" class="btn btn-outline-success w-100 p-3 text-decoration-none">
+                            <a href="<?php echo e(route('cart.index')); ?>" class="btn btn-outline-success w-100 p-3 text-decoration-none">
                                 <i class="fas fa-shopping-cart fa-2x mb-2"></i>
                                 <div>Giỏ hàng</div>
                             </a>
                         </div>
                         <div class="col-md-6 col-xl-3 mb-3">
-                            <a href="{{ route('orders.index') }}" class="btn btn-outline-info w-100 p-3 text-decoration-none">
+                            <a href="<?php echo e(route('orders.index')); ?>" class="btn btn-outline-info w-100 p-3 text-decoration-none">
                                 <i class="fas fa-box fa-2x mb-2"></i>
                                 <div>Đơn hàng</div>
                             </a>
                         </div>
                         <div class="col-md-6 col-xl-3 mb-3">
-                            <a href="{{ route('contact') }}" class="btn btn-outline-warning w-100 p-3 text-decoration-none">
+                            <a href="<?php echo e(route('contact')); ?>" class="btn btn-outline-warning w-100 p-3 text-decoration-none">
                                 <i class="fas fa-headset fa-2x mb-2"></i>
                                 <div>Hỗ trợ</div>
                             </a>
@@ -89,13 +90,13 @@
     </div>
 
     <!-- Recent Orders -->
-    @if(isset($orders) && $orders->count() > 0)
+    <?php if(isset($orders) && $orders->count() > 0): ?>
     <div class="row">
         <div class="col-12">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Đơn hàng gần đây</h5>
-                    <a href="{{ route('orders.index') }}" class="btn btn-outline-primary btn-sm">Xem tất cả</a>
+                    <a href="<?php echo e(route('orders.index')); ?>" class="btn btn-outline-primary btn-sm">Xem tất cả</a>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -110,14 +111,14 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($orders as $order)
+                                <?php $__currentLoopData = $orders; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $order): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <tr>
                                     <td>
-                                        <strong>#{{ $order->order_number ?? $order->id }}</strong>
+                                        <strong>#<?php echo e($order->order_number ?? $order->id); ?></strong>
                                     </td>
-                                    <td>{{ $order->created_at->format('d/m/Y H:i') }}</td>
+                                    <td><?php echo e($order->created_at->format('d/m/Y H:i')); ?></td>
                                     <td>
-                                        @php
+                                        <?php
                                             $statusClass = match($order->status) {
                                                 'pending' => 'warning',
                                                 'processing' => 'info',
@@ -134,19 +135,19 @@
                                                 'cancelled' => 'Đã hủy',
                                                 default => ucfirst($order->status)
                                             };
-                                        @endphp
-                                        <span class="badge bg-{{ $statusClass }}">{{ $statusText }}</span>
+                                        ?>
+                                        <span class="badge bg-<?php echo e($statusClass); ?>"><?php echo e($statusText); ?></span>
                                     </td>
                                     <td>
-                                        <strong>{{ number_format($order->total_amount) }}₫</strong>
+                                        <strong><?php echo e(number_format($order->total_amount)); ?>₫</strong>
                                     </td>
                                     <td>
-                                        <a href="{{ route('orders.show', $order) }}" class="btn btn-outline-primary btn-sm">
+                                        <a href="<?php echo e(route('orders.show', $order)); ?>" class="btn btn-outline-primary btn-sm">
                                             <i class="fas fa-eye"></i> Xem
                                         </a>
                                     </td>
                                 </tr>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </tbody>
                         </table>
                     </div>
@@ -154,7 +155,7 @@
             </div>
         </div>
     </div>
-    @else
+    <?php else: ?>
     <!-- No Orders -->
     <div class="row">
         <div class="col-12">
@@ -163,34 +164,34 @@
                     <i class="fas fa-shopping-bag fa-3x text-muted mb-3"></i>
                     <h5>Chưa có đơn hàng nào</h5>
                     <p class="text-muted mb-4">Bạn chưa có đơn hàng nào. Hãy bắt đầu mua sắm ngay!</p>
-                    <a href="{{ route('products.index') }}" class="btn btn-primary btn-lg">
+                    <a href="<?php echo e(route('products.index')); ?>" class="btn btn-primary btn-lg">
                         <i class="fas fa-shopping-cart"></i> Bắt đầu mua sắm
                     </a>
                 </div>
             </div>
         </div>
     </div>
-    @endif
+    <?php endif; ?>
 
     <!-- Statistics Cards (if user is admin) -->
-    @if(Auth::user()->role === 'admin')
+    <?php if(Auth::user()->role === 'admin'): ?>
     <div class="row mt-4">
         <div class="col-12 mb-3">
             <h4>Quản trị viên</h4>
             <div class="d-flex gap-2">
-                <a href="{{ route('admin.dashboard') }}" class="btn btn-danger">
+                <a href="<?php echo e(route('admin.dashboard')); ?>" class="btn btn-danger">
                     <i class="fas fa-cog"></i> Admin Panel
                 </a>
-                <a href="{{ route('admin.products.index') }}" class="btn btn-outline-danger">
+                <a href="<?php echo e(route('admin.products.index')); ?>" class="btn btn-outline-danger">
                     <i class="fas fa-box"></i> Quản lý sản phẩm
                 </a>
-                <a href="{{ route('admin.orders.index') }}" class="btn btn-outline-danger">
+                <a href="<?php echo e(route('admin.orders.index')); ?>" class="btn btn-outline-danger">
                     <i class="fas fa-clipboard-list"></i> Quản lý đơn hàng
                 </a>
             </div>
         </div>
     </div>
-    @endif
+    <?php endif; ?>
 
     <!-- Account Security -->
     <div class="row mt-4">
@@ -204,27 +205,55 @@
                         <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
                             <div>
                                 <strong>Mật khẩu</strong>
-                                <div class="text-muted small">Cập nhật lần cuối: {{ Auth::user()->updated_at->diffForHumans() }}</div>
+                                <div class="text-muted small">Cập nhật lần cuối: <?php echo e(Auth::user()->updated_at->diffForHumans()); ?></div>
                             </div>
-<form method="POST" action="{{ route('password.change') }}">
-@csrf
+<form method="POST" action="<?php echo e(route('password.change')); ?>">
+<?php echo csrf_field(); ?>
 
 
 <div class="mb-3">
 <label for="current_password" class="form-label">Mật khẩu hiện tại</label>
-<input type="password" class="form-control @error('current_password') is-invalid @enderror" name="current_password" required>
-@error('current_password')
-<div class="invalid-feedback">{{ $message }}</div>
-@enderror
+<input type="password" class="form-control <?php $__errorArgs = ['current_password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>" name="current_password" required>
+<?php $__errorArgs = ['current_password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+<div class="invalid-feedback"><?php echo e($message); ?></div>
+<?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
 </div>
 
 
 <div class="mb-3">
 <label for="new_password" class="form-label">Mật khẩu mới</label>
-<input type="password" class="form-control @error('new_password') is-invalid @enderror" name="new_password" required>
-@error('new_password')
-<div class="invalid-feedback">{{ $message }}</div>
-@enderror
+<input type="password" class="form-control <?php $__errorArgs = ['new_password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>" name="new_password" required>
+<?php $__errorArgs = ['new_password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+<div class="invalid-feedback"><?php echo e($message); ?></div>
+<?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
 </div>
 
 
@@ -241,16 +270,16 @@
                             <div>
                                 <strong>Xác thực email</strong>
                                 <div class="text-muted small">
-                                    @if(Auth::user()->email_verified_at)
+                                    <?php if(Auth::user()->email_verified_at): ?>
                                         <span class="text-success">Đã xác thực</span>
-                                    @else
+                                    <?php else: ?>
                                         <span class="text-warning">Chưa xác thực</span>
-                                    @endif
+                                    <?php endif; ?>
                                 </div>
                             </div>
-                            @if(!Auth::user()->email_verified_at)
+                            <?php if(!Auth::user()->email_verified_at): ?>
                                 <a href="#" class="btn btn-outline-warning btn-sm">Xác thực ngay</a>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -266,18 +295,18 @@
                     <div class="activity-list">
                         <div class="activity-item mb-3 pb-2 border-bottom">
                             <i class="fas fa-sign-in-alt text-success me-2"></i>
-                            <span>Đăng nhập vào {{ Auth::user()->updated_at->format('d/m/Y H:i') }}</span>
+                            <span>Đăng nhập vào <?php echo e(Auth::user()->updated_at->format('d/m/Y H:i')); ?></span>
                         </div>
                         <div class="activity-item mb-3 pb-2 border-bottom">
                             <i class="fas fa-user-plus text-info me-2"></i>
-                            <span>Tạo tài khoản vào {{ Auth::user()->created_at->format('d/m/Y H:i') }}</span>
+                            <span>Tạo tài khoản vào <?php echo e(Auth::user()->created_at->format('d/m/Y H:i')); ?></span>
                         </div>
-                        @if(isset($orders) && $orders->count() > 0)
+                        <?php if(isset($orders) && $orders->count() > 0): ?>
                         <div class="activity-item">
                             <i class="fas fa-shopping-cart text-primary me-2"></i>
-                            <span>Đặt hàng lần cuối: {{ $orders->first()->created_at->diffForHumans() }}</span>
+                            <span>Đặt hàng lần cuối: <?php echo e($orders->first()->created_at->diffForHumans()); ?></span>
                         </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -285,7 +314,7 @@
     </div>
 </div>
 
-@push('styles')
+<?php $__env->startPush('styles'); ?>
 <style>
 .avatar-circle {
     font-weight: bold;
@@ -303,5 +332,7 @@
     border-bottom: none !important;
 }
 </style>
-@endpush
-@endsection
+<?php $__env->stopPush(); ?>
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\BadmintonShop\resources\views/dashboard.blade.php ENDPATH**/ ?>

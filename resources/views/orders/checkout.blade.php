@@ -166,9 +166,9 @@
                                     <h6><i class="fas fa-info-circle"></i> Thông tin chuyển khoản:</h6>
                                     <div class="row">
                                         <div class="col-md-6">
-                                            <p class="mb-1"><strong>Ngân hàng:</strong> Vietcombank</p>
-                                            <p class="mb-1"><strong>Số tài khoản:</strong> 0123456789</p>
-                                            <p class="mb-1"><strong>Tên tài khoản:</strong> BADMINTON SHOP</p>
+                                            <p class="mb-1"><strong>Ngân hàng:</strong> MbBank</p>
+                                            <p class="mb-1"><strong>Số tài khoản:</strong> 0941608915</p>
+                                            <p class="mb-1"><strong>Tên tài khoản:</strong> DO NHAT HOANG</p>
                                         </div>
                                         <div class="col-md-6">
                                             <p class="mb-1"><strong>Nội dung CK:</strong> [Họ tên] - [Số điện thoại]</p>
