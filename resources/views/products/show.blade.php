@@ -245,7 +245,10 @@
                                         <div class="d-flex align-items-center mb-2">
                                             <span class="me-2">{{ $i }} sao</span>
                                             <div class="progress flex-grow-1 me-3" style="height: 10px;">
-                                                <div class="progress-bar bg-warning" style="width: {{ $reviewStats['percentages'][$i] }}%"></div>
+                                                @php
+                                                    $percentage = isset($reviewStats['percentages'][$i]) ? $reviewStats['percentages'][$i] : 0;
+                                                @endphp
+                                                <div class="progress-bar bg-warning" data-fill="{{ $percentage }}"></div>
                                             </div>
                                             <span class="text-muted">{{ $reviewStats['distribution'][$i] }}</span>
                                         </div>
@@ -402,6 +405,14 @@
 
 @push('scripts')
 <script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.progress-bar[data-fill]').forEach(function (bar) {
+        var value = parseFloat(bar.dataset.fill);
+        var width = isFinite(value) ? Math.min(Math.max(value, 0), 100) : 0;
+        bar.style.width = width + '%';
+    });
+});
+
 function changeMainImage(src) {
     document.getElementById('mainImage').src = src;
 }

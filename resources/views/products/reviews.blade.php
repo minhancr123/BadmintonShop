@@ -49,7 +49,10 @@
                         <div class="d-flex align-items-center mb-2">
                             <span class="me-2">{{ $i }}★</span>
                             <div class="progress flex-grow-1 me-2" style="height: 8px;">
-                                <div class="progress-bar bg-warning" style="width: {{ $reviewStats['percentages'][$i] }}%"></div>
+                                @php
+                                    $percentage = isset($reviewStats['percentages'][$i]) ? $reviewStats['percentages'][$i] : 0;
+                                @endphp
+                                <div class="progress-bar bg-warning" data-fill="{{ $percentage }}"></div>
                             </div>
                             <small class="text-muted">{{ $reviewStats['distribution'][$i] }}</small>
                         </div>
@@ -219,6 +222,12 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.progress-bar[data-fill]').forEach(function(bar) {
+        var value = parseFloat(bar.dataset.fill);
+        var width = isFinite(value) ? Math.min(Math.max(value, 0), 100) : 0;
+        bar.style.width = width + '%';
+    });
+
     // Handle helpful button clicks
     document.querySelectorAll('.helpful-btn').forEach(button => {
         button.addEventListener('click', function() {
