@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-<<<<<<< HEAD
 use Illuminate\Support\Str;
 
 /**
@@ -63,10 +62,4 @@ class Coupon extends Model
     {
         return $this->hasMany(CouponUsage::class);
     }
-=======
-
-class Coupon extends Model
-{
-    use HasFactory;
->>>>>>> 5ae26efb97593e15a5da771c2527d8b215e365ee
 }
