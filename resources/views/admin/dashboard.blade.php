@@ -79,6 +79,8 @@
     </div>
 </div>
 
+
+
 <div class="row">
     <!-- Sales Chart -->
     <div class="col-xl-8 mb-4">
@@ -90,6 +92,9 @@
             </div>
             <div class="card-body">
                 <canvas id="salesChart" style="height: 300px;"></canvas>
+                <script type="application/json" id="monthly-sales-data">
+                    {!! json_encode($monthlySales) !!}
+                </script>
             </div>
         </div>
     </div>
@@ -238,7 +243,16 @@
     // Sales Chart
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('salesChart').getContext('2d');
-        const monthlySales = @json($monthlySales);
+        const dataElement = document.getElementById('monthly-sales-data');
+        let monthlySales = [];
+
+        if (dataElement) {
+            try {
+                monthlySales = JSON.parse(dataElement.textContent || '[]');
+            } catch (error) {
+                console.error('Không thể phân tích dữ liệu doanh số:', error);
+            }
+        }
         
         new Chart(ctx, {
             type: 'line',

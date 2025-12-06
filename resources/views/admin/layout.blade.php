@@ -227,6 +227,11 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link @if(request()->routeIs('admin.coupons.*')) active @endif" href="{{ route('admin.coupons.index') }}">
+                                <i class="fas fa-ticket-alt"></i> Mã giảm giá
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link @if(request()->routeIs('admin.users.*')) active @endif" href="{{ route('admin.users.index') }}">
                                 <i class="fas fa-users"></i> Khách hàng
                             </a>

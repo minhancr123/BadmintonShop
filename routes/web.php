@@ -12,175 +12,14 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ReviewController;
-use App\Http\Controllers\SocialAuthController;
+use App\Http\Controllers\CouponController;
+use App\Models\Order;
 
 /*
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
 */
-
-// Health check endpoint for Render
-Route::get('/health', function () {
-    return response()->json([
-        'status' => 'healthy',
-        'timestamp' => now()->toIso8601String(),
-        'service' => 'BadmintonShop',
-    ]);
-});
-
-// Debug session endpoint
-Route::middleware('web')->get('/debug-session', function () {
-    session()->put('test', 'value_' . time());
-    $sessionId = session()->getId();
-    $sessionPath = storage_path('framework/sessions');
-    $sessionFile = $sessionPath . '/' . $sessionId;
-    
-    return response()->json([
-        'session_id' => $sessionId,
-        'session_driver' => config('session.driver'),
-        'session_path' => $sessionPath,
-        'session_file_exists' => file_exists($sessionFile),
-        'session_files_count' => count(glob($sessionPath . '/*')),
-        'session_data' => session()->all(),
-        'cookies' => request()->cookies->all(),
-        'is_https' => request()->isSecure(),
-        'headers' => [
-            'X-Forwarded-Proto' => request()->header('X-Forwarded-Proto'),
-            'X-Forwarded-For' => request()->header('X-Forwarded-For'),
-        ],
-    ]);
-});
-
-// Check middleware stack
-Route::get('/check-middleware', function () {
-    $router = app('router');
-    $route = $router->current();
-    
-    return response()->json([
-        'middleware' => $route ? $route->gatherMiddleware() : [],
-        'web_middleware' => config('app')::VERSION >= 11 ? 
-            app(\Illuminate\Contracts\Http\Kernel::class)->getMiddlewareGroups()['web'] ?? [] :
-            [],
-        'cookie_jar' => app('cookie')->getQueuedCookies(),
-    ]);
-});
-
-// Test raw cookie WITH web middleware
-Route::middleware('web')->get('/test-raw-cookie', function () {
-    $cookieValue = 'laravel_value_' . time();
-    
-    // Queue the cookie
-    cookie()->queue('laravel_test_cookie', $cookieValue, 60, '/', null, false, true, false, 'lax');
-    
-    $response = response()->json([
-        'message' => 'Testing cookie setting',
-        'timestamp' => time(),
-        'cookie_value' => $cookieValue,
-        'queued_cookies' => count(app('cookie')->getQueuedCookies()),
-    ]);
-    
-    // Also add cookie to response
-    return $response->cookie('response_test_cookie', 'response_value_' . time(), 60, '/', null, false, true, false, 'lax');
-});
-
-// Test session save
-Route::middleware('web')->get('/test-session-save', function () {
-    try {
-        // Check if session is working
-        $before = session()->all();
-        session()->put('test_key', 'test_value_' . time());
-        session()->save();
-        $after = session()->all();
-        
-        $sessionPath = storage_path('framework/sessions');
-        $sessionId = session()->getId();
-        $sessionFile = $sessionPath . '/' . $sessionId;
-        
-        $fileContents = null;
-        if (file_exists($sessionFile)) {
-            $fileContents = file_get_contents($sessionFile);
-        }
-        
-        $response = response()->json([
-            'success' => true,
-            'session_id' => $sessionId,
-            'session_driver' => config('session.driver'),
-            'before' => $before,
-            'after' => $after,
-            'file_exists' => file_exists($sessionFile),
-            'file_path' => $sessionFile,
-            'file_contents' => $fileContents,
-            'storage_writable' => is_writable($sessionPath),
-            'middleware_loaded' => class_exists('Illuminate\Session\Middleware\StartSession'),
-        ]);
-        
-        // Try to manually set cookie
-        return $response->withCookie(cookie('test_cookie', 'test_value', 120, '/', null, false, true, false, 'lax'));
-        
-    } catch (\Exception $e) {
-        return response()->json([
-            'error' => true,
-            'message' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
-        ]);
-    }
-});
-
-// Test force login
-Route::middleware('web')->get('/test-login', function () {
-    // Try to find any admin user
-    $user = \App\Models\User::where('role', 'admin')->first();
-    if (!$user) {
-        // Try first user
-        $user = \App\Models\User::first();
-    }
-    
-    if ($user) {
-        \Illuminate\Support\Facades\Auth::login($user);
-        session()->regenerate();
-        session()->save(); // Force save session
-        
-        $response = response()->json([
-            'success' => true,
-            'user_id' => auth()->id(),
-            'user_email' => $user->email,
-            'session_id' => session()->getId(),
-            'is_authenticated' => auth()->check(),
-            'session_name' => config('session.cookie'),
-            'session_path' => config('session.path'),
-            'session_domain' => config('session.domain'),
-            'session_secure' => config('session.secure'),
-            'session_same_site' => config('session.same_site'),
-            'redirect_to' => '/dashboard',
-        ]);
-        
-        // Manually set cookie to test
-        $cookieName = config('session.cookie');
-        $response->cookie($cookieName, session()->getId(), config('session.lifetime'));
-        
-        return $response;
-    }
-    
-    // No users found, show all users
-    $allUsers = \App\Models\User::select('id', 'name', 'email', 'role')->get();
-    return response()->json([
-        'error' => 'No users found', 
-        'all_users' => $allUsers,
-        'total_users' => $allUsers->count()
-    ]);
-});
-
-// Test check auth
-Route::middleware('web')->get('/test-auth', function () {
-    return response()->json([
-        'is_authenticated' => auth()->check(),
-        'user_id' => auth()->id(),
-        'user' => auth()->user(),
-        'session_id' => session()->getId(),
-        'session_data' => session()->all(),
-    ]);
-});
 
 // Home page
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -219,7 +58,13 @@ Route::get('/categories/{slug}', [CategoryController::class, 'show'])->name('cat
 Route::middleware(['auth'])->group(function () {
     // User Dashboard
     Route::get('/dashboard', function () {
-        $orders = auth()->user()->orders()->latest()->limit(5)->get();
+        $userId = auth()->id();
+
+        $orders = Order::query()
+                        ->where('user_id', $userId)
+                        ->latest()
+                        ->limit(5)
+                        ->get();
         return view('dashboard', compact('orders'));
     })->name('dashboard');
 
@@ -230,6 +75,10 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
     Route::post('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
     Route::get('/api/cart/count', [CartController::class, 'getCartCount'])->name('api.cart.count');
+
+    // Coupon routes
+    Route::post('/coupons/apply', [CouponController::class, 'apply'])->name('coupons.apply');
+    Route::delete('/coupons/remove', [CouponController::class, 'remove'])->name('coupons.remove');
 
     // Order Routes
     Route::get('/checkout', [OrderController::class, 'checkout'])->name('checkout');
@@ -249,25 +98,34 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
     // Product Management
     Route::get('/products', [AdminController::class, 'products'])->name('products.index');
     Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
-    Route::post('/products/bulk-action', [ProductController::class, 'bulkAction'])->name('products.bulk-action');
     Route::post('/products', [ProductController::class, 'store'])->name('products.store');
     Route::get('/products/{id}/edit', [ProductController::class, 'edit'])->name('products.edit');
-    Route::post('/products/{id}', [ProductController::class, 'update'])->name('products.update');
+    Route::put('/products/{id}', [ProductController::class, 'update'])->name('products.update');
     Route::delete('/products/{id}', [ProductController::class, 'destroy'])->name('products.destroy');
+    Route::post('/products/bulk-action', [ProductController::class, 'bulkAction'])->name('products.bulk-action');
 
     // Category Management
     Route::get('/categories', [AdminController::class, 'categories'])->name('categories.index');
     Route::get('/categories/create', [CategoryController::class, 'create'])->name('categories.create');
-    Route::post('/categories/bulk-action', [CategoryController::class, 'bulkAction'])->name('categories.bulk-action');
     Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
     Route::get('/categories/{id}/edit', [CategoryController::class, 'edit'])->name('categories.edit');
-    Route::post('/categories/{id}', [CategoryController::class, 'update'])->name('categories.update');
+    Route::put('/categories/{id}', [CategoryController::class, 'update'])->name('categories.update');
     Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+    Route::post('/categories/bulk-action', [CategoryController::class, 'bulkAction'])->name('categories.bulk-action');
 
     // Order Management
     Route::get('/orders', [AdminController::class, 'orders'])->name('orders.index');
     Route::get('/orders/{order}', [AdminController::class, 'orderShow'])->name('orders.show');
     Route::patch('/orders/{order}/status', [AdminController::class, 'updateOrderStatus'])->name('orders.update-status');
+
+    // Coupon Management
+    Route::get('/coupons', [AdminController::class, 'coupons'])->name('coupons.index');
+    Route::get('/coupons/create', [AdminController::class, 'createCoupon'])->name('coupons.create');
+    Route::post('/coupons', [AdminController::class, 'storeCoupon'])->name('coupons.store');
+    Route::get('/coupons/{coupon}/edit', [AdminController::class, 'editCoupon'])->name('coupons.edit');
+    Route::put('/coupons/{coupon}', [AdminController::class, 'updateCoupon'])->name('coupons.update');
+    Route::delete('/coupons/{coupon}', [AdminController::class, 'destroyCoupon'])->name('coupons.destroy');
+    Route::patch('/coupons/{coupon}/status', [AdminController::class, 'updateCouponStatus'])->name('coupons.update-status');
 
     // User Management
     Route::get('/users', [AdminController::class, 'users'])->name('users.index');
@@ -300,26 +158,16 @@ Route::group(['prefix' => 'products/{product}'], function () {
 Route::group(['prefix' => 'reviews', 'middleware' => 'auth'], function () {
     Route::post('/{review}/helpful', [ReviewController::class, 'helpful'])->name('reviews.helpful');
 });
+// blockUser() và unblockUser():
+// Route::middleware(['auth', 'admin'])->group(function () {
+//     Route::post('/admin/users/{id}/block', [AdminController::class, 'blockUser'])->name('admin.users.block');
+//     Route::post('/admin/users/{id}/unblock', [AdminController::class, 'unblockUser'])->name('admin.users.unblock');
+//     Route::post('/admin/users/{id}/reset-password', [AdminController::class, 'resetPassword'])->name('admin.users.reset-password');
 
+// });
 // Block and unblock user
 Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
     Route::post('users/{id}/block', [AdminController::class, 'blockUser'])->name('users.block');
     Route::post('users/{id}/unblock', [AdminController::class, 'unblockUser'])->name('users.unblock');
     Route::post('users/{id}/reset-password', [AdminController::class, 'resetPassword'])->name('users.reset-password');
-});
-
-Route::get('auth/google', [SocialAuthController::class, 'redirectToGoogle'])->name('auth.google');
-Route::get('auth/google/callback', [SocialAuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
-
-// Debug Route
-Route::get('/debug-session', function () {
-    return [
-        'session_id' => session()->getId(),
-        'user_id' => auth()->id(),
-        'is_secure' => request()->secure(),
-        'ip' => request()->ip(),
-        'user_agent' => request()->userAgent(),
-        'headers' => request()->header(),
-        'session_config' => config('session'),
-    ];
 });

@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Order;
 use App\Models\User;
+use App\Models\Coupon;
+use App\Models\CouponUsage;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -30,6 +33,46 @@ class AdminController extends Controller
             'total_users' => User::where('role', 'user')->count(),
             'total_revenue' => Order::where('payment_status', 'paid')->sum('total_amount'),
         ];
+
+        $now = Carbon::now();
+
+        $activeCoupons = Coupon::where('is_active', true)
+            ->where(function ($query) use ($now) {
+                $query->whereNull('starts_at')
+                      ->orWhere('starts_at', '<=', $now);
+            })
+            ->where(function ($query) use ($now) {
+                $query->whereNull('ends_at')
+                      ->orWhere('ends_at', '>=', $now);
+            })
+            ->count();
+
+        $totalCoupons = Coupon::count();
+
+        $couponStats = [
+            'total' => $totalCoupons,
+            'active' => $activeCoupons,
+            'inactive' => max(0, $totalCoupons - $activeCoupons),
+            'scheduled' => Coupon::whereNotNull('starts_at')->where('starts_at', '>', $now)->count(),
+            'expired' => Coupon::whereNotNull('ends_at')->where('ends_at', '<', $now)->count(),
+            'total_usage' => CouponUsage::count(),
+            'usage_today' => CouponUsage::whereDate('created_at', $now->toDateString())->count(),
+        ];
+
+        $popularCoupons = Coupon::withCount('usages')
+            ->orderByDesc('usages_count')
+            ->limit(5)
+            ->get();
+
+        $recentCoupons = Coupon::orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
+
+        $expiringCoupons = Coupon::whereNotNull('ends_at')
+            ->where('ends_at', '>=', $now)
+            ->orderBy('ends_at', 'asc')
+            ->limit(5)
+            ->get();
 
         // Recent orders
         $recentOrders = Order::with(['user', 'orderItems'])
@@ -59,7 +102,16 @@ class AdminController extends Controller
             ];
         }
 
-        return view('admin.dashboard', compact('stats', 'recentOrders', 'lowStockProducts', 'monthlySales'));
+        return view('admin.dashboard', compact(
+            'stats',
+            'recentOrders',
+            'lowStockProducts',
+            'monthlySales',
+            'couponStats',
+            'popularCoupons',
+            'recentCoupons',
+            'expiringCoupons'
+        ));
     }
 
     /**
@@ -135,6 +187,262 @@ class AdminController extends Controller
         $categories = $query->orderBy('name', 'asc')->paginate(15);
 
         return view('admin.categories.index', compact('categories'));
+    }
+
+    /**
+     * Coupon management page.
+     */
+    public function coupons(Request $request)
+    {
+        $now = Carbon::now();
+
+        $query = Coupon::query()->withCount('usages');
+
+        if ($search = $request->get('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('code', 'like', "%{$search}%")
+                  ->orWhere('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        if ($status = $request->get('status')) {
+            $query->where(function ($q) use ($status, $now) {
+                switch ($status) {
+                    case 'active':
+                        $q->where('is_active', true)
+                          ->where(function ($dateQuery) use ($now) {
+                              $dateQuery->whereNull('starts_at')->orWhere('starts_at', '<=', $now);
+                          })
+                          ->where(function ($dateQuery) use ($now) {
+                              $dateQuery->whereNull('ends_at')->orWhere('ends_at', '>=', $now);
+                          });
+                        break;
+                    case 'inactive':
+                        $q->where('is_active', false);
+                        break;
+                    case 'scheduled':
+                        $q->where('is_active', true)
+                          ->whereNotNull('starts_at')
+                          ->where('starts_at', '>', $now);
+                        break;
+                    case 'expired':
+                        $q->whereNotNull('ends_at')
+                          ->where('ends_at', '<', $now);
+                        break;
+                }
+            });
+        }
+
+        $sort = $request->get('sort', 'newest');
+
+        switch ($sort) {
+            case 'popular':
+                $query->orderByDesc('usages_count');
+                break;
+            case 'value':
+                $query->orderByDesc('discount_value');
+                break;
+            case 'ending_soon':
+                $query->orderByRaw('CASE WHEN ends_at IS NULL THEN 1 ELSE 0 END, ends_at ASC');
+                break;
+            default:
+                $query->orderByDesc('created_at');
+        }
+
+        $coupons = $query->paginate(15);
+        $coupons->appends($request->query());
+
+        $summary = [
+            'total' => Coupon::count(),
+            'active' => Coupon::where('is_active', true)
+                ->where(function ($dateQuery) use ($now) {
+                    $dateQuery->whereNull('starts_at')->orWhere('starts_at', '<=', $now);
+                })
+                ->where(function ($dateQuery) use ($now) {
+                    $dateQuery->whereNull('ends_at')->orWhere('ends_at', '>=', $now);
+                })
+                ->count(),
+            'scheduled' => Coupon::where('is_active', true)
+                ->whereNotNull('starts_at')
+                ->where('starts_at', '>', $now)
+                ->count(),
+            'expired' => Coupon::whereNotNull('ends_at')
+                ->where('ends_at', '<', $now)
+                ->count(),
+            'inactive' => Coupon::where('is_active', false)->count(),
+            'usage_today' => CouponUsage::whereDate('created_at', $now->toDateString())->count(),
+            'total_usage' => CouponUsage::count(),
+        ];
+
+        return view('admin.coupons.index', [
+            'coupons' => $coupons,
+            'summary' => $summary,
+            'filters' => [
+                'search' => $request->get('search'),
+                'status' => $status,
+                'sort' => $sort,
+            ],
+        ]);
+    }
+
+    /**
+     * Show create coupon form.
+     */
+    public function createCoupon()
+    {
+        $coupon = new Coupon([
+            'discount_type' => 'percentage',
+            'is_active' => true,
+        ]);
+
+        return view('admin.coupons.create', compact('coupon'));
+    }
+
+    /**
+     * Store a newly created coupon.
+     */
+    public function storeCoupon(Request $request)
+    {
+        $data = $this->validateCouponData($request);
+
+        Coupon::create($data);
+
+        return redirect()
+            ->route('admin.coupons.index')
+            ->with('success', 'Đã tạo mã giảm giá thành công.');
+    }
+
+    /**
+     * Show edit form for coupon.
+     */
+    public function editCoupon(Coupon $coupon)
+    {
+        return view('admin.coupons.edit', compact('coupon'));
+    }
+
+    /**
+     * Update coupon data.
+     */
+    public function updateCoupon(Request $request, Coupon $coupon)
+    {
+        $data = $this->validateCouponData($request, $coupon);
+
+        $coupon->update($data);
+
+        return redirect()
+            ->route('admin.coupons.index')
+            ->with('success', 'Đã cập nhật mã giảm giá thành công.');
+    }
+
+    /**
+     * Remove coupon.
+     */
+    public function destroyCoupon(Coupon $coupon)
+    {
+        try {
+            $coupon->delete();
+
+            return redirect()
+                ->route('admin.coupons.index')
+                ->with('success', 'Đã xóa mã giảm giá.');
+        } catch (\Throwable $exception) {
+            return redirect()
+                ->route('admin.coupons.index')
+                ->with('error', 'Không thể xóa mã giảm giá: ' . $exception->getMessage());
+        }
+    }
+
+    /**
+     * Validate and normalize coupon payload.
+     */
+    private function validateCouponData(Request $request, ?Coupon $coupon = null): array
+    {
+        $codeRule = 'required|string|max:50|unique:coupons,code';
+
+        if ($coupon) {
+            $codeRule .= ',' . $coupon->id;
+        }
+
+        $validated = $request->validate([
+            'code' => $codeRule,
+            'name' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
+            'discount_type' => 'required|in:percentage,fixed',
+            'discount_value' => 'required|numeric|min:0',
+            'max_discount_amount' => 'nullable|numeric|min:0',
+            'minimum_order_amount' => 'nullable|numeric|min:0',
+            'usage_limit' => 'nullable|integer|min:1',
+            'usage_limit_per_user' => 'nullable|integer|min:1',
+            'starts_at' => 'nullable|date',
+            'ends_at' => 'nullable|date|after_or_equal:starts_at',
+            'is_active' => 'nullable|boolean',
+        ]);
+
+        $data = [
+            'code' => Str::upper($validated['code']),
+            'name' => $validated['name'] ?? null,
+            'description' => $validated['description'] ?? null,
+            'discount_type' => $validated['discount_type'],
+            'discount_value' => (float) $validated['discount_value'],
+            'max_discount_amount' => $request->filled('max_discount_amount')
+                ? (float) $request->input('max_discount_amount')
+                : null,
+            'minimum_order_amount' => $request->filled('minimum_order_amount')
+                ? (float) $request->input('minimum_order_amount')
+                : null,
+            'usage_limit' => $request->filled('usage_limit')
+                ? (int) $request->input('usage_limit')
+                : null,
+            'usage_limit_per_user' => $request->filled('usage_limit_per_user')
+                ? (int) $request->input('usage_limit_per_user')
+                : null,
+            'starts_at' => $request->filled('starts_at')
+                ? Carbon::parse($request->input('starts_at'))
+                : null,
+            'ends_at' => $request->filled('ends_at')
+                ? Carbon::parse($request->input('ends_at'))
+                : null,
+            'is_active' => $request->boolean('is_active'),
+        ];
+
+        if ($data['discount_type'] === 'fixed') {
+            $data['max_discount_amount'] = null;
+        }
+
+        return $data;
+    }
+
+    /**
+     * Update coupon active status.
+     */
+    public function updateCouponStatus(Request $request, Coupon $coupon)
+    {
+        $request->validate([
+            'status' => 'required|in:activate,deactivate',
+        ]);
+
+        $shouldActivate = $request->input('status') === 'activate';
+
+        try {
+            $coupon->is_active = $shouldActivate;
+
+            if ($shouldActivate && $coupon->starts_at && $coupon->starts_at->isFuture()) {
+                $coupon->starts_at = Carbon::now();
+            }
+
+            if (!$shouldActivate && $coupon->ends_at && $coupon->ends_at->isPast()) {
+                $coupon->ends_at = Carbon::now();
+            }
+
+            $coupon->save();
+
+            return redirect()->back()->with('success', $shouldActivate
+                ? 'Đã kích hoạt mã giảm giá thành công.'
+                : 'Đã vô hiệu hóa mã giảm giá.');
+        } catch (\Throwable $exception) {
+            return redirect()->back()->with('error', 'Không thể cập nhật trạng thái mã giảm giá: ' . $exception->getMessage());
+        }
     }
 
     /**
